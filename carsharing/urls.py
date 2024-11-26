@@ -19,4 +19,6 @@ urlpatterns = [
     path('statistics/most_popular_cars', views.most_popular_cars, name='most_popular_cars'),
     path('user/<int:user_id>/bookings/', views.user_bookings, name='user_bookings'),
     path('car/<int:car_id>/bookings/', views.car_bookings, name='car_bookings'),
+    path('register/', views.register_page, name='register'),
+    path('login/', views.login_page, name='login'),
 ]

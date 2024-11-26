@@ -62,3 +62,29 @@ class BookingForm(forms.ModelForm):
                     "This car is already booked for the selected dates."
                 )
         return cleaned_data
+
+
+class UserRegistrationForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'password', 'phone_number', 'driver_license']
+    password = forms.CharField(widget=forms.PasswordInput)
+
+
+class UserLoginForm(forms.Form):
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get('email')
+        password = cleaned_data.get('password')
+
+        try:
+            user = User.objects.get(email=email)
+            if user.password != password:
+                raise forms.ValidationError("Incorrect password")
+        except User.DoesNotExist:
+            raise forms.ValidationError("There is no user with this email")
+
+        return cleaned_data

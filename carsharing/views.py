@@ -1,11 +1,56 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import UserForm, CarForm, BookingForm
+from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm
 from .models import User, Car, Booking
 from django.db.models import Sum, Count
 
 
 def index(request):
-    return render(request, 'carsharing/index.html')
+    if 'user_id' not in request.session:
+        return redirect('login')
+    user_id = request.session['user_id']
+    user = User.objects.get(user_id=user_id)
+    return render(request, 'carsharing/index.html', {'user': user})
+
+def register_page(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserRegistrationForm()
+
+    return render(request, 'carsharing/register.html', {'form': form})
+
+
+def login_page(request):
+    if request.method == 'POST':
+        form = UserLoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+
+            try:
+                user = User.objects.get(email=email)
+                if user.password == password:
+                    request.session['user_id'] = user.user_id
+                    return redirect('index')
+                else:
+                    form.add_error('password', 'Incorrect Password')
+            except User.DoesNotExist:
+                form.add_error('email', 'There is no user with this email')
+
+    else:
+        form = UserLoginForm()
+
+    return render(request, 'carsharing/login.html', {'form': form})
+
+
+def logout_page(request):
+    if 'user_id' in request.session:
+        del request.session['user_id']
+
+    return redirect('login')
 
 def user_list(request):
     users = User.objects.all()
