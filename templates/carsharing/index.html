@@ -57,6 +57,15 @@
                         <li><a class="dropdown-item" href="{% url 'most_popular_cars' %}"> Most popular cars</a></li>
                     </ul>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" href="#" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        Account
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{% url 'user_info' %}"> Account info</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"> Logout</a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>

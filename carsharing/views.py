@@ -47,9 +47,7 @@ def login_page(request):
 
 
 def logout_page(request):
-    if 'user_id' in request.session:
-        del request.session['user_id']
-
+    request.session.flush()
     return redirect('login')
 
 def user_list(request):
@@ -204,3 +202,13 @@ def car_bookings(request, car_id):
     car = get_object_or_404(Car, pk=car_id)
     bookings = Booking.objects.filter(car=car)
     return render(request, 'carsharing/car_bookings.html', {'car': car, 'bookings': bookings})
+
+
+def user_info(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    user = get_object_or_404(User, pk=user_id)
+    bookings = Booking.objects.filter(client=user)
+    return render(request, 'carsharing/user_info.html', {'user': user, 'bookings': bookings})
