@@ -15,6 +15,7 @@ urlpatterns = [
     path('users/delete/<int:pk>/', views.delete_user, name='delete_user'),
     path('cars/delete/<int:pk>/', views.delete_car, name='delete_car'),
     path('bookings/delete/<int:pk>/', views.delete_booking, name='delete_booking'),
+    path('branches/', views.branches_list, name='branches_list'),
     path('statistics/total_income', views.total_income, name='total_income'),
     path('statistics/most_popular_cars', views.most_popular_cars, name='most_popular_cars'),
     path('user/<int:user_id>/bookings/', views.user_bookings, name='user_bookings'),

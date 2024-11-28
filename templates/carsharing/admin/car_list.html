@@ -71,7 +71,6 @@
         <th>License Plate</th>
         <th>Release Year</th>
         <th>Price per Day</th>
-        <th>Status</th>
     </tr>
     {% for car in cars %}
         <tr>
@@ -82,7 +81,6 @@
             <td>{{ car.license_plate }}</td>
             <td>{{ car.release_year }}</td>
             <td>{{ car.price_per_day }}</td>
-            <td>{{ car.car_status }}</td>
             <td><a href="{% url 'car_bookings' car.car_id %}">Bookings</a></td>
             <td><a href="{% url 'edit_car' car.car_id %}">Edit</a></td>
             <td><a href="{% url 'delete_car' car.car_id %}">Delete</a></td>

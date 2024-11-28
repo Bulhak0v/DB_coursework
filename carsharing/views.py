@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm
-from .models import User, Car, Booking
+from .models import User, Car, Booking, Branch
 from django.db.models import Sum, Count
 
 
@@ -65,6 +65,10 @@ def car_list(request):
 def booking_list(request):
     bookings = Booking.objects.all()
     return render(request, 'carsharing/admin/booking_list.html', {'bookings': bookings})
+
+def branches_list(request):
+    branches = Branch.objects.all()
+    return render(request, 'carsharing/admin/branches_list.html', {'branches': branches})
 
 def add_user(request):
     if request.method == "POST":
@@ -215,4 +219,7 @@ def user_info(request):
 
     user = get_object_or_404(User, pk=user_id)
     bookings = Booking.objects.filter(client=user)
-    return render(request, 'carsharing/admin/user_info.html', {'user': user, 'bookings': bookings})
+    if not user.is_superuser:
+        return render(request, 'carsharing/user/user_account_info.html', {'user': user, 'bookings': bookings})
+    else:
+        return render(request, 'carsharing/admin/user_info.html', {'user': user, 'bookings': bookings})

@@ -36,7 +36,7 @@ class Branch(models.Model):
 
 class Car(models.Model):
     car_id = models.AutoField(primary_key=True)
-    branch_id = models.ForeignKey(Branch, related_name='cars', on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, related_name='cars', on_delete=models.CASCADE)
     car_type = models.CharField(max_length=50)
     brand = models.CharField(max_length=50)
     model = models.CharField(max_length=30)
