@@ -223,3 +223,8 @@ def user_info(request):
         return render(request, 'carsharing/user/user_account_info.html', {'user': user, 'bookings': bookings})
     else:
         return render(request, 'carsharing/admin/user_info.html', {'user': user, 'bookings': bookings})
+
+
+def user_cars(request):
+    cars = Car.objects.all()
+    return render(request, 'carsharing/user/user_cars_page.html', {'cars': cars})
