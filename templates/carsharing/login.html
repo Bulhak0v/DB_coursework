@@ -5,11 +5,16 @@
     <title>Login</title>
 </head>
 <body>
-    <h1>Login</h1>
-    <form method="POST">
+<h1>Login</h1>
+<div>
+    <form method="POST" action="{% url 'login' %}">
         {% csrf_token %}
-        {{ form.as_p }} 
+        {{ form.as_p }}
         <button type="submit">Login</button>
     </form>
+    <form method="GET" action="{% url 'register' %}">
+        <button type="submit">Register</button>
+    </form>
+</div>
 </body>
 </html>

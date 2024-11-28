@@ -9,7 +9,11 @@ def index(request):
         return redirect('login')
     user_id = request.session['user_id']
     user = User.objects.get(user_id=user_id)
-    return render(request, 'carsharing/index.html', {'user': user})
+    if not user.is_superuser:
+        return render(request, 'carsharing/user/user_main_page.html', {'user': user})
+    else:
+        return render(request, 'carsharing/admin/index.html', {'user': user})
+
 
 def register_page(request):
     if request.method == 'POST':
@@ -52,15 +56,15 @@ def logout_page(request):
 
 def user_list(request):
     users = User.objects.all()
-    return render(request, 'carsharing/user_list.html', {'users': users})
+    return render(request, 'carsharing/admin/user_list.html', {'users': users})
 
 def car_list(request):
     cars = Car.objects.all()
-    return render(request, 'carsharing/car_list.html', {'cars': cars})
+    return render(request, 'carsharing/admin/car_list.html', {'cars': cars})
 
 def booking_list(request):
     bookings = Booking.objects.all()
-    return render(request, 'carsharing/booking_list.html', {'bookings': bookings})
+    return render(request, 'carsharing/admin/booking_list.html', {'bookings': bookings})
 
 def add_user(request):
     if request.method == "POST":
@@ -70,7 +74,7 @@ def add_user(request):
             return redirect('user_list')
     else:
         form = UserForm()
-    return render(request, 'carsharing/add_user.html', {'form': form})
+    return render(request, 'carsharing/admin/add_user.html', {'form': form})
 
 def add_car(request):
     if request.method == "POST":
@@ -80,7 +84,7 @@ def add_car(request):
             return redirect('car_list')
     else:
         form = CarForm()
-    return render(request, 'carsharing/add_car.html', {'form': form})
+    return render(request, 'carsharing/admin/add_car.html', {'form': form})
 
 
 def add_booking(request):
@@ -106,7 +110,7 @@ def add_booking(request):
     else:
         form = BookingForm()
 
-    return render(request, 'carsharing/add_booking.html', {'form': form})
+    return render(request, 'carsharing/admin/add_booking.html', {'form': form})
 
 def edit_user(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -117,7 +121,7 @@ def edit_user(request, pk):
             return redirect('user_list')
     else:
         form = UserForm(instance=user)
-    return render(request, 'carsharing/edit_user.html', {'form': form, 'user': user})
+    return render(request, 'carsharing/admin/edit_user.html', {'form': form, 'user': user})
 
 
 def edit_car(request, pk):
@@ -129,7 +133,7 @@ def edit_car(request, pk):
             return redirect('car_list')
     else:
         form = CarForm(instance=car)
-    return render(request, 'carsharing/edit_car.html', {'form': form, 'car': car})
+    return render(request, 'carsharing/admin/edit_car.html', {'form': form, 'car': car})
 
 
 def edit_booking(request, pk):
@@ -141,14 +145,14 @@ def edit_booking(request, pk):
             return redirect('booking_list')
     else:
         form = BookingForm(instance=booking)
-    return render(request, 'carsharing/edit_booking.html', {'form': form, 'booking': booking})
+    return render(request, 'carsharing/admin/edit_booking.html', {'form': form, 'booking': booking})
 
 def delete_user(request, pk):
     user = get_object_or_404(User, pk=pk)
     if request.method == "POST":
         user.delete()
         return redirect('user_list')
-    return render(request, 'carsharing/confirm_delete.html', {'object': user})
+    return render(request, 'carsharing/admin/confirm_delete.html', {'object': user})
 
 
 def delete_car(request, pk):
@@ -156,7 +160,7 @@ def delete_car(request, pk):
     if request.method == "POST":
         car.delete()
         return redirect('car_list')
-    return render(request, 'carsharing/confirm_delete.html', {'object': car})
+    return render(request, 'carsharing/admin/confirm_delete.html', {'object': car})
 
 
 def delete_booking(request, pk):
@@ -164,7 +168,7 @@ def delete_booking(request, pk):
     if request.method == "POST":
         booking.delete()
         return redirect('booking_list')
-    return render(request, 'carsharing/confirm_delete.html', {'object': booking})
+    return render(request, 'carsharing/admin/confirm_delete.html', {'object': booking})
 
 
 def total_income(request):
@@ -183,7 +187,7 @@ def total_income(request):
 
         total_income = bookings.aggregate(total_income=Sum('total_price'))['total_income']
 
-    return render(request, 'carsharing/total_income.html', {
+    return render(request, 'carsharing/admin/total_income.html', {
         'total_income': total_income,
         'bookings': bookings
     })
@@ -191,17 +195,17 @@ def total_income(request):
 
 def most_popular_cars(request):
     cars_stats = Car.objects.annotate(bookings_count=Count('booking')).order_by('-bookings_count')
-    return render(request, 'carsharing/most_popular_cars.html', {'cars_stats': cars_stats})
+    return render(request, 'carsharing/admin/most_popular_cars.html', {'cars_stats': cars_stats})
 
 def user_bookings(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     bookings = Booking.objects.filter(client=user)
-    return render(request, 'carsharing/user_bookings.html', {'user': user, 'bookings': bookings})
+    return render(request, 'carsharing/admin/user_bookings.html', {'user': user, 'bookings': bookings})
 
 def car_bookings(request, car_id):
     car = get_object_or_404(Car, pk=car_id)
     bookings = Booking.objects.filter(car=car)
-    return render(request, 'carsharing/car_bookings.html', {'car': car, 'bookings': bookings})
+    return render(request, 'carsharing/admin/car_bookings.html', {'car': car, 'bookings': bookings})
 
 
 def user_info(request):
@@ -211,4 +215,4 @@ def user_info(request):
 
     user = get_object_or_404(User, pk=user_id)
     bookings = Booking.objects.filter(client=user)
-    return render(request, 'carsharing/user_info.html', {'user': user, 'bookings': bookings})
+    return render(request, 'carsharing/admin/user_info.html', {'user': user, 'bookings': bookings})
