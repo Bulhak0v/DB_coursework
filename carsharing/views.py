@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, BookingStepTwoForm
+from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, \
+    BookingStepTwoForm
 from .models import User, Car, Booking, Branch
 from django.db.models import Sum, Count
 from datetime import datetime
@@ -68,7 +69,15 @@ def car_list(request):
 
 def booking_list(request):
     bookings = Booking.objects.all()
-    return render(request, 'carsharing/admin/booking_list.html', {'bookings': bookings})
+    branches = {branch.branch_id: branch for branch in Branch.objects.all()}
+
+    for booking in bookings:
+        booking.pickup_branch = branches.get(booking.pickup_location)
+        booking.return_branch = branches.get(booking.return_location)
+
+    return render(request, 'carsharing/admin/booking_list.html', {
+        'bookings': bookings,
+    })
 
 
 def branches_list(request):
@@ -182,6 +191,19 @@ def delete_booking(request, pk):
         booking.delete()
         return redirect('booking_list')
     return render(request, 'carsharing/admin/confirm_delete.html', {'object': booking})
+
+
+def cancel_booking(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+
+    if booking.status == 'cancelled':
+        return redirect('user_info')
+
+    if request.method == "POST":
+        booking.status = 'Cancelled'
+        booking.save()
+        return redirect('user_info')
+    return render(request, 'carsharing/user/confirm_cancel.html', {'object': booking})
 
 
 def total_income(request):

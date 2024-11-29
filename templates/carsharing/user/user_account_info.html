@@ -75,6 +75,7 @@
                 <td>{{ booking.end_date }}</td>
                 <td>{{ booking.total_price }}</td>
                 <td>{{ booking.status }}</td>
+                <td><a href="{% url 'cancel_booking' booking.booking_id %}">Cancel</a></td>
             </tr>
         {% endfor %}
         </tbody>

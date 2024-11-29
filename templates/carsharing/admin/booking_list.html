@@ -52,7 +52,8 @@
                         Statistics
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a></li>
+                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a>
+                        </li>
                         <li><a class="dropdown-item" href="{% url 'most_popular_cars' %}"> Most popular cars</a></li>
                     </ul>
                 </li>
@@ -72,18 +73,36 @@
         <th>End Date</th>
         <th>Total Price</th>
         <th>Status</th>
+        <th>Pickup Location</th>
+        <th>Return Location</th>
     </tr>
     </thead>
     <tbody>
     {% for booking in bookings %}
         <tr>
-            <td>{{ booking.booking_id }}</td> 
+            <td>{{ booking.booking_id }}</td>
             <td>{{ booking.client.first_name }} {{ booking.client.last_name }}</td>
             <td>{{ booking.car.brand }} {{ booking.car.model }}</td>
             <td>{{ booking.start_date }}</td>
             <td>{{ booking.end_date }}</td>
             <td>{{ booking.total_price }}</td>
             <td>{{ booking.status }}</td>
+            <td>
+                {% if booking.pickup_branch %}
+                    {{ booking.pickup_branch.city }} {{ booking.pickup_branch.street }}
+                    {{ booking.pickup_branch.building }} 
+                {% else %}
+                    Unknown
+                {% endif %}
+            </td>
+            <td>
+                {% if booking.return_branch %}
+                    {{ booking.return_branch.city }} {{ booking.return_branch.street }}
+                    {{ booking.return_branch.building }} 
+                {% else %}
+                    Unknown
+                {% endif %}
+            </td>
             <td><a href="{% url 'edit_booking' booking.booking_id %}">Edit</a></td>
             <td><a href="{% url 'delete_booking' booking.booking_id %}">Delete</a></td>
         </tr>
