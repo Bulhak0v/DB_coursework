@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm
+from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, BookingStepTwoForm
 from .models import User, Car, Booking, Branch
 from django.db.models import Sum, Count
+from datetime import datetime
 
 
 def index(request):
@@ -54,21 +55,26 @@ def logout_page(request):
     request.session.flush()
     return redirect('login')
 
+
 def user_list(request):
     users = User.objects.all()
     return render(request, 'carsharing/admin/user_list.html', {'users': users})
+
 
 def car_list(request):
     cars = Car.objects.all()
     return render(request, 'carsharing/admin/car_list.html', {'cars': cars})
 
+
 def booking_list(request):
     bookings = Booking.objects.all()
     return render(request, 'carsharing/admin/booking_list.html', {'bookings': bookings})
 
+
 def branches_list(request):
     branches = Branch.objects.all()
     return render(request, 'carsharing/admin/branches_list.html', {'branches': branches})
+
 
 def add_user(request):
     if request.method == "POST":
@@ -79,6 +85,7 @@ def add_user(request):
     else:
         form = UserForm()
     return render(request, 'carsharing/admin/add_user.html', {'form': form})
+
 
 def add_car(request):
     if request.method == "POST":
@@ -116,6 +123,7 @@ def add_booking(request):
 
     return render(request, 'carsharing/admin/add_booking.html', {'form': form})
 
+
 def edit_user(request, pk):
     user = get_object_or_404(User, pk=pk)
     if request.method == "POST":
@@ -150,6 +158,7 @@ def edit_booking(request, pk):
     else:
         form = BookingForm(instance=booking)
     return render(request, 'carsharing/admin/edit_booking.html', {'form': form, 'booking': booking})
+
 
 def delete_user(request, pk):
     user = get_object_or_404(User, pk=pk)
@@ -201,10 +210,12 @@ def most_popular_cars(request):
     cars_stats = Car.objects.annotate(bookings_count=Count('booking')).order_by('-bookings_count')
     return render(request, 'carsharing/admin/most_popular_cars.html', {'cars_stats': cars_stats})
 
+
 def user_bookings(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     bookings = Booking.objects.filter(client=user)
     return render(request, 'carsharing/admin/user_bookings.html', {'user': user, 'bookings': bookings})
+
 
 def car_bookings(request, car_id):
     car = get_object_or_404(Car, pk=car_id)
@@ -228,3 +239,74 @@ def user_info(request):
 def user_cars(request):
     cars = Car.objects.all()
     return render(request, 'carsharing/user/user_cars_page.html', {'cars': cars})
+
+
+def user_make_booking_step_one(request):
+    if request.method == 'POST':
+        form = BookingStepOneForm(request.POST)
+        if form.is_valid():
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
+            pickup_branch = form.cleaned_data['pickup_branch']
+            return_branch = form.cleaned_data['return_branch']
+
+            start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
+            end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
+
+            request.session['start_date'] = start_date_str
+            request.session['end_date'] = end_date_str
+            request.session['pickup_branch'] = pickup_branch.branch_id
+            request.session['return_branch'] = return_branch.branch_id
+
+            return redirect('user_make_booking_step_two')
+    else:
+        form = BookingStepOneForm()
+
+    return render(request, 'carsharing/user/user_booking_step_one.html', {'form': form})
+
+
+def user_make_booking_step_two(request):
+    # Отримуємо значення з сесії
+    start_date_str = request.session.get('start_date')
+    end_date_str = request.session.get('end_date')
+
+    # Конвертуємо їх у datetime
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S')
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S')
+
+    pickup_branch_id = request.session.get('pickup_branch')
+    pickup_branch = Branch.objects.get(branch_id=pickup_branch_id)
+
+    return_branch_id = request.session.get('return_branch')
+
+    available_cars = Car.objects.filter(branch=pickup_branch)
+
+    if request.method == 'POST':
+        form = BookingStepTwoForm(request.POST)
+        form.fields['car'].queryset = available_cars
+        if form.is_valid():
+            selected_car = form.cleaned_data['car']
+            total_days = (end_date - start_date).days
+            total_price = total_days * selected_car.price_per_day
+
+            # Створюємо бронювання
+            Booking.objects.create(
+                client=User.objects.get(pk=request.session['user_id']),
+                car=selected_car,
+                start_date=start_date,
+                end_date=end_date,
+                total_price=total_price,
+                status='reserved',
+                pickup_location=pickup_branch_id,
+                return_location=return_branch_id
+            )
+
+            return redirect('user_info')
+    else:
+        form = BookingStepTwoForm()
+        form.fields['car'].queryset = available_cars
+
+    return render(request, 'carsharing/user/user_booking_step_two.html', {
+        'form': form,
+        'available_cars': available_cars,
+    })

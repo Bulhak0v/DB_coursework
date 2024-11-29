@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Car, Booking
+from .models import User, Car, Booking, Branch
 
 
 class UserForm(forms.ModelForm):
@@ -34,7 +34,7 @@ class CarForm(forms.ModelForm):
         cleaned_data = super().clean()
         license_plate = cleaned_data.get('license_plate')
 
-        if Car.objects.filter(license_plate = license_plate).exclude(pk=self.instance.pk).exists():
+        if Car.objects.filter(license_plate=license_plate).exclude(pk=self.instance.pk).exists():
             self.add_error('license_plate', 'A car with this license plate already exists.')
 
         return cleaned_data
@@ -68,6 +68,7 @@ class UserRegistrationForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email', 'password', 'phone_number', 'driver_license']
+
     password = forms.CharField(widget=forms.PasswordInput)
 
 
@@ -88,3 +89,32 @@ class UserLoginForm(forms.Form):
             raise forms.ValidationError("There is no user with this email")
 
         return cleaned_data
+
+
+class BookingStepOneForm(forms.ModelForm):
+    start_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}))
+    end_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}))
+    pickup_branch = forms.ModelChoiceField(
+        queryset=Branch.objects.all(),
+        label="Pickup Location",
+        widget=forms.Select
+    )
+    return_branch = forms.ModelChoiceField(
+        queryset=Branch.objects.all(),
+        label="Return Location",
+        widget=forms.Select
+    )
+    class Meta:
+        model = Booking
+        fields = ['start_date', 'end_date', 'pickup_branch', 'return_branch']
+
+class BookingStepTwoForm(forms.Form):
+    car = forms.ModelChoiceField(
+        queryset=Car.objects.none(),
+        label="Car",
+        widget=forms.Select
+    )
+
+    class Meta:
+        model = Booking
+        fields = ['car']

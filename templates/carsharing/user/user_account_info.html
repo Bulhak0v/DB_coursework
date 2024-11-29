@@ -20,7 +20,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'user_list' %}">Make a booking</a>
+                    <a class="nav-link" href="{% url 'user_make_booking_step_one' %}">Make a booking</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'user_list' %}">Cars</a>
@@ -60,7 +60,6 @@
     <table class="table table-striped">
         <thead>
         <tr>
-            <th>Booking ID</th>
             <th>Car</th>
             <th>Start Date</th>
             <th>End Date</th>
@@ -71,7 +70,6 @@
         <tbody>
         {% for booking in bookings %}
             <tr>
-                <td>{{ booking.booking_id }}</td>
                 <td>{{ booking.car }}</td>
                 <td>{{ booking.start_date }}</td>
                 <td>{{ booking.end_date }}</td>

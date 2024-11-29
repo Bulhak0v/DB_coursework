@@ -67,6 +67,8 @@ class Booking(models.Model):
     end_date = models.DateTimeField()
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='reserved')
+    pickup_location = models.IntegerField()
+    return_location = models.IntegerField()
 
     class Meta:
         managed = False
