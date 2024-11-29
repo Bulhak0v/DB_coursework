@@ -77,3 +77,31 @@ class Booking(models.Model):
     def __str__(self):
         return f"Booking {self.booking_id} for {self.client} with {self.car} from {self.start_date} to {self.end_date}"
 
+
+class Additional_Services(models.Model):
+    service_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    service_status = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'additional_services'
+
+    def __str__(self):
+        return self.name
+
+
+class Booking_Services(models.Model):
+    booking = models.ForeignKey(Booking, related_name='booking_services', on_delete=models.CASCADE)
+    service = models.ForeignKey(Additional_Services, related_name='booking_services', on_delete=models.CASCADE)
+    services_number = models.IntegerField(default=1)
+
+    class Meta:
+        managed = False
+        db_table = 'booking_services'
+
+    def __str__(self):
+        return f"Booking {self.booking.booking_id} - Service {self.service.name}"
+

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Step Three - Additional Services</title>
+</head>
+<body>
+    <h1>Select Additional Services</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit">Next Step</button>
+    </form>
+</body>
+</html>

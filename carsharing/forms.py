@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Car, Booking, Branch
+from .models import User, Car, Booking, Branch, Additional_Services
 
 
 class UserForm(forms.ModelForm):
@@ -118,3 +118,11 @@ class BookingStepTwoForm(forms.Form):
     class Meta:
         model = Booking
         fields = ['car']
+
+class BookingStepThreeForm(forms.Form):
+    services = forms.ModelMultipleChoiceField(
+        queryset=Additional_Services.objects.filter(service_status=True),
+        widget=forms.CheckboxSelectMultiple,
+        label="Additional Services",
+        required=False
+    )

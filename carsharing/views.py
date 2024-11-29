@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, \
-    BookingStepTwoForm
-from .models import User, Car, Booking, Branch
+    BookingStepTwoForm, BookingStepThreeForm
+from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services
 from django.db.models import Sum, Count
 from datetime import datetime
 
@@ -288,11 +288,8 @@ def user_make_booking_step_one(request):
 
 
 def user_make_booking_step_two(request):
-    # Отримуємо значення з сесії
     start_date_str = request.session.get('start_date')
     end_date_str = request.session.get('end_date')
-
-    # Конвертуємо їх у datetime
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S')
     end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S')
 
@@ -308,22 +305,19 @@ def user_make_booking_step_two(request):
         form.fields['car'].queryset = available_cars
         if form.is_valid():
             selected_car = form.cleaned_data['car']
+
+            # Зберігаємо car_id в сесії
+            request.session['selected_car_id'] = selected_car.car_id
+
             total_days = (end_date - start_date).days
             total_price = total_days * selected_car.price_per_day
+            request.session['total_price'] = total_price
+            request.session['pickup_branch'] = pickup_branch_id.branch_id
+            request.session['return_branch'] = return_branch_id.branch_id
+            request.session['start_date'] = start_date_str
+            request.session['end_date'] = end_date_str
 
-            # Створюємо бронювання
-            Booking.objects.create(
-                client=User.objects.get(pk=request.session['user_id']),
-                car=selected_car,
-                start_date=start_date,
-                end_date=end_date,
-                total_price=total_price,
-                status='reserved',
-                pickup_location=pickup_branch_id,
-                return_location=return_branch_id
-            )
-
-            return redirect('user_info')
+            return redirect('user_booking_step_three')
     else:
         form = BookingStepTwoForm()
         form.fields['car'].queryset = available_cars
@@ -331,4 +325,61 @@ def user_make_booking_step_two(request):
     return render(request, 'carsharing/user/user_booking_step_two.html', {
         'form': form,
         'available_cars': available_cars,
+    })
+
+
+def user_make_booking_step_three(request):
+    start_date_str = request.session.get('start_date')
+    end_date_str = request.session.get('end_date')
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S')
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S')
+
+    selected_car_id = Car.objects.get(car_id=request.session.get('selected_car_id'))
+
+    pickup_branch_id = request.session.get('pickup_branch')
+    pickup_branch = Branch.objects.get(branch_id=pickup_branch_id)
+
+    return_branch_id = request.session.get('return_branch')
+    return_branch = Branch.objects.get(branch_id=return_branch_id)
+
+    if request.method == 'POST':
+        form = BookingStepThreeForm(request.POST)
+        if form.is_valid():
+            # Створення бронювання
+            booking = Booking.objects.create(
+                client=User.objects.get(pk=request.session['user_id']),
+                car=selected_car_id,
+                start_date=start_date,
+                end_date=end_date,
+                total_price=request.session.get('total_price'),
+                status='reserved',
+                pickup_location=pickup_branch_id,
+                return_location=return_branch_id,
+            )
+
+            # Додавання вибраних послуг до бронювання
+            selected_services = form.cleaned_data['services']
+            for service in selected_services:
+                Booking_Services.objects.create(
+                    booking=booking,
+                    service=service,
+                    services_number=1
+                )
+
+            total_price = booking.total_price
+            for service in selected_services:
+                total_price += service.price
+            booking.total_price = total_price
+            booking.save()
+
+            return redirect('user_info')
+
+    else:
+        form = BookingStepThreeForm()
+
+    return render(request, 'carsharing/user/user_booking_step_three.html', {
+        'form': form,
+        'selected_car': selected_car_id,
+        'pickup_branch': pickup_branch,
+        'return_branch': return_branch,
     })
