@@ -4,6 +4,7 @@ from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLog
 from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services
 from django.db.models import Sum, Count
 from datetime import datetime
+from django.utils.timezone import make_aware, now
 
 
 def index(request):
@@ -272,15 +273,30 @@ def user_make_booking_step_one(request):
             pickup_branch = form.cleaned_data['pickup_branch']
             return_branch = form.cleaned_data['return_branch']
 
-            start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
-            end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
+            current_datetime = now()
 
-            request.session['start_date'] = start_date_str
-            request.session['end_date'] = end_date_str
-            request.session['pickup_branch'] = pickup_branch.branch_id
-            request.session['return_branch'] = return_branch.branch_id
+            if start_date.tzinfo is None or start_date.tzinfo.utcoffset(start_date) is None:
+                start_date = make_aware(start_date)
 
-            return redirect('user_make_booking_step_two')
+            if end_date.tzinfo is None or end_date.tzinfo.utcoffset(end_date) is None:
+                end_date = make_aware(end_date)
+
+            if end_date < start_date:
+                form.add_error('end_date', 'End date cannot be earlier than start date.')
+            elif start_date < current_datetime:
+                form.add_error('start_date', 'Start date cannot be in the past.')
+
+            else:
+                # Зберігаємо дати та інші дані в сесії
+                start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
+                end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
+
+                request.session['start_date'] = start_date_str
+                request.session['end_date'] = end_date_str
+                request.session['pickup_branch'] = pickup_branch.branch_id
+                request.session['return_branch'] = return_branch.branch_id
+
+                return redirect('user_make_booking_step_two')
     else:
         form = BookingStepOneForm()
 
@@ -296,24 +312,28 @@ def user_make_booking_step_two(request):
     pickup_branch_id = request.session.get('pickup_branch')
     pickup_branch = Branch.objects.get(branch_id=pickup_branch_id)
 
-    return_branch_id = request.session.get('return_branch')
+    branch_cars = Car.objects.filter(branch=pickup_branch)
 
-    available_cars = Car.objects.filter(branch=pickup_branch)
+    unavailable_cars = Booking.objects.filter(
+        car__in=branch_cars,
+        start_date__lt=end_date,
+        end_date__gt=start_date
+    ).exclude(status='cancelled').values_list('car', flat=True)
+
+    available_cars = branch_cars.exclude(car_id__in=unavailable_cars)
 
     if request.method == 'POST':
         form = BookingStepTwoForm(request.POST)
         form.fields['car'].queryset = available_cars
         if form.is_valid():
             selected_car = form.cleaned_data['car']
-
-            # Зберігаємо car_id в сесії
             request.session['selected_car_id'] = selected_car.car_id
 
             total_days = (end_date - start_date).days
             total_price = total_days * selected_car.price_per_day
             request.session['total_price'] = total_price
-            request.session['pickup_branch'] = pickup_branch_id.branch_id
-            request.session['return_branch'] = return_branch_id.branch_id
+            request.session['pickup_branch'] = pickup_branch_id
+            request.session['return_branch'] = request.session.get('return_branch')
             request.session['start_date'] = start_date_str
             request.session['end_date'] = end_date_str
 
