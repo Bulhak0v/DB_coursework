@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Agreement</title>
+</head>
+<body>
+    <h1>Створення договору оренди</h1>
+
+    <p><strong>Номер угоди:</strong> {{ agreement_number }}</p>
+    <p><strong>Дата підписання:</strong> {{ signature_date }}</p>
+    <p><strong>Сума до оплати:</strong> {{ payment_sum }} UAH</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <label for="promo_code">Промокод:</label>
+        <input type="text" id="promo_code" name="promo_code" placeholder="Введіть промокод">
+        <button type="submit" name="apply_promo_code">Застосувати промокод</button>
+    </form>
+
+    {% if promo_code %}
+        <p><strong>Застосовано промокод:</strong> {{ promo_code.code }}</p>
+        <p><strong>Знижка:</strong> {{ discount }}%</p>
+    {% endif %}
+
+    <form method="POST" action="{% url 'confirm_rental_agreement' booking.booking_id %}">
+        {% csrf_token %}
+        <button type="submit" name="confirm">Підписати угоду</button>
+    </form>
+    <form method="GET" action="{% url 'cancel_rental_agreement' %}">
+        <button type="submit" name="cancel">Скасувати</button>
+    </form>
+</body>
+</html>

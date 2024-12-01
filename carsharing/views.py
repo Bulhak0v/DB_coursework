@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, \
     BookingStepTwoForm, BookingStepThreeForm
-from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services
+from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services, Rental_Agreement, Promo_Code
 from django.db.models import Sum, Count
 from datetime import datetime
 from django.utils.timezone import make_aware, now
+import random
 
 
 def index(request):
@@ -365,7 +366,6 @@ def user_make_booking_step_three(request):
     if request.method == 'POST':
         form = BookingStepThreeForm(request.POST)
         if form.is_valid():
-            # Створення бронювання
             booking = Booking.objects.create(
                 client=User.objects.get(pk=request.session['user_id']),
                 car=selected_car_id,
@@ -377,7 +377,6 @@ def user_make_booking_step_three(request):
                 return_location=return_branch_id,
             )
 
-            # Додавання вибраних послуг до бронювання
             selected_services = form.cleaned_data['services']
             for service in selected_services:
                 Booking_Services.objects.create(
@@ -392,7 +391,7 @@ def user_make_booking_step_three(request):
             booking.total_price = total_price
             booking.save()
 
-            return redirect('user_info')
+            return redirect('user_booking_step_four', booking_id=booking.booking_id)
 
     else:
         form = BookingStepThreeForm()
@@ -403,3 +402,61 @@ def user_make_booking_step_three(request):
         'pickup_branch': pickup_branch,
         'return_branch': return_branch,
     })
+
+
+def user_make_booking_step_four(request, booking_id):
+    booking = get_object_or_404(Booking, booking_id=booking_id)
+
+    def generate_agreement_number():
+        while True:
+            number = ''.join(random.choices('0123456789', k=10))
+            if not Rental_Agreement.objects.filter(agreement_number=number).exists():
+                return number
+
+    agreement_number = generate_agreement_number()
+    request.session['agreement_number'] = agreement_number
+    payment_sum = float(booking.total_price)
+    request.session['payment_sum'] = payment_sum
+    promo_code = None
+    discount = 0
+
+    if request.method == 'POST' and 'apply_promo_code' in request.POST:
+        entered_code = request.POST.get('promo_code', '').strip()
+        try:
+            promo_code = Promo_Code.objects.get(code=entered_code, end_date__gte=now().date())
+            discount = promo_code.discount
+            payment_sum = payment_sum * (100 - discount) / 100 
+        except Promo_Code.DoesNotExist:
+            promo_code = None
+            discount = 0
+
+    context = {
+        'agreement_number': agreement_number,
+        'signature_date': now(),
+        'payment_sum': payment_sum,
+        'booking': booking,
+        'promo_code': promo_code,
+        'discount': discount,
+    }
+    return render(request, 'carsharing/user/rental_agreement.html', context)
+
+
+def confirm_rental_agreement(request, booking_id):
+    booking = get_object_or_404(Booking, booking_id=booking_id)
+    agreement_number = request.session.get('agreement_number')
+    payment_sum = request.session.get('payment_sum')
+
+    Rental_Agreement.objects.create(
+        agreement_number=agreement_number,
+        signature_date=now(),
+        payment_sum=payment_sum,
+        booking=booking
+    )
+
+    del request.session['agreement_number']
+    del request.session['payment_sum']
+
+    return redirect('user_info')
+
+def cancel_rental_agreement(request):
+    return redirect('user_make_booking_step_one')

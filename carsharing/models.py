@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class User(models.Model):
@@ -105,3 +106,37 @@ class Booking_Services(models.Model):
     def __str__(self):
         return f"Booking {self.booking.booking_id} - Service {self.service.name}"
 
+
+class Promo_Code(models.Model):
+    promo_code_id = models.AutoField(primary_key=True)
+    code = models.CharField(max_length=50, unique=True)
+    discount = models.IntegerField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100)
+        ]
+    )
+    end_date = models.DateField()
+
+    class Meta:
+        managed = False
+        db_table = 'promo_code'
+
+    def __str__(self):
+        return f"Promo Code {self.code} - {self.discount}% valid till {self.end_date}"
+
+
+class Rental_Agreement(models.Model):
+    rental_agreement_id = models.AutoField(primary_key=True)
+    agreement_number = models.CharField(max_length=20, unique=True)
+    signature_date = models.DateTimeField(auto_now_add=True)
+    payment_sum = models.DecimalField(max_digits=10, decimal_places=2)
+    booking = models.OneToOneField('Booking', on_delete=models.CASCADE, related_name='rental_agreement')
+    promo_code = models.ForeignKey('Promo_Code', on_delete=models.SET_NULL, null=True, blank=True, related_name='rental_agreements')
+
+    class Meta:
+        managed = False
+        db_table = 'rental_agreement'
+
+    def __str__(self):
+        return f"Rental Agreement {self.agreement_number} for Booking {self.booking.id}"

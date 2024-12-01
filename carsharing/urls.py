@@ -28,5 +28,8 @@ urlpatterns = [
     path('user_booking', views.user_make_booking_step_one, name='user_make_booking_step_one'),
     path('user_booking/step_two', views.user_make_booking_step_two, name='user_make_booking_step_two'),
     path('user_booking/step_three', views.user_make_booking_step_three, name='user_booking_step_three'),
+    path('user_booking/step-four/<int:booking_id>/', views.user_make_booking_step_four, name='user_booking_step_four'),
+    path('confirm-agreement/<int:booking_id>/', views.confirm_rental_agreement, name='confirm_rental_agreement'),
+    path('cancel-agreement/', views.cancel_rental_agreement, name='cancel_rental_agreement'),
     path('user_info/cancel_booking/<int:pk>/', views.cancel_booking, name='cancel_booking'),
 ]
