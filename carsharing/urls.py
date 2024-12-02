@@ -32,5 +32,7 @@ urlpatterns = [
     path('confirm-agreement/<int:booking_id>/', views.confirm_rental_agreement, name='confirm_rental_agreement'),
     path('cancel-agreement/<int:booking_id>/', views.cancel_rental_agreement, name='cancel_rental_agreement'),
     path('user_info/cancel_booking/<int:pk>/', views.cancel_booking, name='cancel_booking'),
+    path('user_info/complete_booking/<int:pk>/', views.complete_booking, name='complete_booking'),
     path('user_info/edit/<int:pk>/', views.edit_user_info, name='edit_user_info'),
+    path('user_info/rental_agreement_info/<int:pk>/', views.rental_agreement_info, name='rental_agreement_info'),
 ]

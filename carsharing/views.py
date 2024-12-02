@@ -202,6 +202,8 @@ def cancel_booking(request, pk):
 
     if booking.status == 'cancelled':
         return redirect('user_info')
+    if booking.status == 'completed':
+        return redirect('user_info')
 
     if request.method == "POST":
         booking.status = 'Cancelled'
@@ -209,6 +211,19 @@ def cancel_booking(request, pk):
         return redirect('user_info')
     return render(request, 'carsharing/user/confirm_cancel.html', {'object': booking})
 
+def complete_booking(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+
+    if booking.status == 'completed':
+        return redirect('user_info')
+    if booking.status == 'cancelled':
+        return redirect('user_info')
+
+    if request.method == "POST":
+        booking.status = 'Completed'
+        booking.save()
+        return redirect('user_info')
+    return render(request, 'carsharing/user/confirm_complete.html', {'object': booking})
 
 def total_income(request):
     total_income = None
@@ -255,11 +270,12 @@ def user_info(request):
         return redirect('login')
 
     user = get_object_or_404(User, pk=user_id)
-    bookings = Booking.objects.filter(client=user)
-    if not user.is_superuser:
-        return render(request, 'carsharing/user/user_account_info.html', {'user': user, 'bookings': bookings})
-    else:
-        return render(request, 'carsharing/admin/user_info.html', {'user': user, 'bookings': bookings})
+    rental_agreements = Rental_Agreement.objects.filter(booking__client=user)
+    return render(
+        request,
+        'carsharing/user/user_account_info.html',
+        {'user': user, 'rental_agreements': rental_agreements}
+    )
 
 
 def user_cars(request):
@@ -290,7 +306,6 @@ def user_make_booking_step_one(request):
                 form.add_error('start_date', 'Start date cannot be in the past.')
 
             else:
-                # Зберігаємо дати та інші дані в сесії
                 start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
                 end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -420,7 +435,6 @@ def user_make_booking_step_four(request, booking_id):
         agreement_number = generate_agreement_number()
         request.session['agreement_number'] = agreement_number
 
-    # Початкові значення
     insurances = Insurance.objects.all()
     selected_insurance_id = request.session.get('selected_insurance_id')
     selected_insurance = None
@@ -433,10 +447,8 @@ def user_make_booking_step_four(request, booking_id):
         except Insurance.DoesNotExist:
             selected_insurance = None
 
-    # Базова сума: ціна бронювання + страховка
     base_payment_sum = float(booking.total_price) + insurance_value
 
-    # Перевірка промокоду в сесії
     promo_code = None
     discount = 0
     applied_promo_code_id = request.session.get('promo_code')
@@ -451,22 +463,18 @@ def user_make_booking_step_four(request, booking_id):
     else:
         payment_sum = base_payment_sum
 
-    # Обробка дій POST
     if request.method == 'POST':
         if 'remove_promo_code' in request.POST:
-            # Видалення промокоду
             request.session.pop('promo_code', None)
             payment_sum = base_payment_sum
             request.session['payment_sum'] = payment_sum
             return redirect('user_booking_step_four', booking_id=booking_id)
 
         if 'apply_promo_code' in request.POST:
-            # Застосування нового промокоду
             entered_code = request.POST.get('promo_code', '').strip()
             try:
                 new_promo_code = Promo_Code.objects.get(code=entered_code, end_date__gte=now().date())
 
-                # Перевірка, чи застосовано новий промокод
                 if applied_promo_code_id and applied_promo_code_id == new_promo_code.promo_code_id:
                     context = {
                         'error_message': 'Цей промокод вже застосовано.',
@@ -481,7 +489,6 @@ def user_make_booking_step_four(request, booking_id):
                     }
                     return render(request, 'carsharing/user/rental_agreement.html', context)
 
-                # Застосування нового промокоду
                 discount = new_promo_code.discount
                 payment_sum = base_payment_sum * (100 - discount) / 100
                 request.session['payment_sum'] = payment_sum
@@ -501,7 +508,6 @@ def user_make_booking_step_four(request, booking_id):
                 }
                 return render(request, 'carsharing/user/rental_agreement.html', context)
 
-    # Збереження значення в сесії
     request.session['payment_sum'] = payment_sum
     request.session['selected_insurance_id'] = selected_insurance_id
 
@@ -539,7 +545,7 @@ def confirm_rental_agreement(request, booking_id):
         payment_sum=payment_sum,
         booking=booking,
         promo_code=promo_code,
-        insurance = selected_insurance,
+        insurance=selected_insurance,
     )
     del request.session['agreement_number']
     del request.session['payment_sum']
@@ -570,3 +576,13 @@ def edit_user_info(request, pk):
     else:
         form = UserForm(instance=user)
     return render(request, 'carsharing/user/edit_user_info.html', {'form': form, 'user': user})
+
+
+def rental_agreement_info(request, pk):
+    agreement = get_object_or_404(Rental_Agreement, pk=pk)
+    booking = agreement.booking
+    context = {
+        'agreement': agreement,
+        'booking': booking
+    }
+    return render(request, 'carsharing/user/rental_agreement_info.html', context)
