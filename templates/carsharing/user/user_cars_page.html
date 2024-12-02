@@ -75,7 +75,6 @@
             <td>{{ car.release_year }}</td>
             <td>{{ car.price_per_day }}</td>
             <td>{{ car.branch.city }}</td>
-            <td><a href="{% url 'car_bookings' car.car_id %}">Make a booking</a></td>
         </tr>
     {% endfor %}
 </table>

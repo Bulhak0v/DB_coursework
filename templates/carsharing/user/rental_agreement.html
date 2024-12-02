@@ -28,7 +28,7 @@
         {% csrf_token %}
         <button type="submit" name="confirm">Підписати угоду</button>
     </form>
-    <form method="GET" action="{% url 'cancel_rental_agreement' %}">
+    <form method="GET" action="{% url 'cancel_rental_agreement' booking_id=booking.booking_id %}">
         <button type="submit" name="cancel">Скасувати</button>
     </form>
 </body>

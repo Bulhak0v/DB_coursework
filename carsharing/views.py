@@ -415,21 +415,46 @@ def user_make_booking_step_four(request, booking_id):
 
     agreement_number = generate_agreement_number()
     request.session['agreement_number'] = agreement_number
-    payment_sum = float(booking.total_price)
-    request.session['payment_sum'] = payment_sum
+
+    payment_sum = request.session.get('payment_sum', float(booking.total_price))
     promo_code = None
     discount = 0
 
     if request.method == 'POST' and 'apply_promo_code' in request.POST:
+        if 'promo_code' in request.session:
+            context = {
+                'error_message': 'Промокод вже було застосовано.',
+                'agreement_number': agreement_number,
+                'signature_date': now(),
+                'payment_sum': payment_sum,
+                'booking': booking,
+                'promo_code': promo_code,
+                'discount': discount,
+            }
+            return render(request, 'carsharing/user/rental_agreement.html', context)
+
         entered_code = request.POST.get('promo_code', '').strip()
         try:
             promo_code = Promo_Code.objects.get(code=entered_code, end_date__gte=now().date())
             discount = promo_code.discount
-            payment_sum = payment_sum * (100 - discount) / 100 
+            payment_sum = payment_sum * (100 - discount) / 100
+            request.session['payment_sum'] = payment_sum
+            request.session['promo_code'] = promo_code.promo_code_id
+            booking.total_price = payment_sum
+            booking.save()
         except Promo_Code.DoesNotExist:
-            promo_code = None
-            discount = 0
+            context = {
+                'error_message': 'Введено недійсний промокод.',
+                'agreement_number': agreement_number,
+                'signature_date': now(),
+                'payment_sum': payment_sum,
+                'booking': booking,
+                'promo_code': promo_code,
+                'discount': discount,
+            }
+            return render(request, 'carsharing/user/rental_agreement.html', context)
 
+    request.session['payment_sum'] = payment_sum
     context = {
         'agreement_number': agreement_number,
         'signature_date': now(),
@@ -445,18 +470,45 @@ def confirm_rental_agreement(request, booking_id):
     booking = get_object_or_404(Booking, booking_id=booking_id)
     agreement_number = request.session.get('agreement_number')
     payment_sum = request.session.get('payment_sum')
+    if payment_sum is None:
+        return redirect('user_booking_step_four', booking_id=booking_id)
+
+    prom_code = request.session.get('promo_code')
+    promo_code = None
+    if prom_code:
+        promo_code = get_object_or_404(Promo_Code, promo_code_id=prom_code)
 
     Rental_Agreement.objects.create(
         agreement_number=agreement_number,
         signature_date=now(),
         payment_sum=payment_sum,
-        booking=booking
+        booking=booking,
+        promo_code=promo_code,
     )
 
     del request.session['agreement_number']
     del request.session['payment_sum']
-
+    request.session.pop('promo_code', None)
     return redirect('user_info')
 
-def cancel_rental_agreement(request):
+def cancel_rental_agreement(request, booking_id=None):
+    booking_id = booking_id or request.session.get('current_booking_id')
+    if booking_id:
+        booking = get_object_or_404(Booking, booking_id=booking_id)
+        booking.delete()
+        request.session.pop('current_booking_id', None)
+        del request.session['agreement_number']
+        del request.session['payment_sum']
+        request.session.pop('promo_code', None)
     return redirect('user_make_booking_step_one')
+
+def edit_user_info(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if request.method == "POST":
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('user_info')
+    else:
+        form = UserForm(instance=user)
+    return render(request, 'carsharing/user/edit_user_info.html', {'form': form, 'user': user})
