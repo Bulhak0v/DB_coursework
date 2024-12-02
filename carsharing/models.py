@@ -126,13 +126,29 @@ class Promo_Code(models.Model):
         return f"Promo Code {self.code} - {self.discount}% valid till {self.end_date}"
 
 
+class Insurance(models.Model):
+    insurance_id = models.AutoField(primary_key=True)
+    insurance_type = models.CharField(max_length=100, verbose_name="Insurance Type")
+    insurance_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Insurance Value")
+    insurance_details = models.TextField(blank=True, null=True, verbose_name="Insurance Details")
+
+    class Meta:
+        managed = False
+        db_table = 'insurance'
+
+    def __str__(self):
+        return f"{self.insurance_type} (${self.insurance_value})"
+
+
 class Rental_Agreement(models.Model):
     rental_agreement_id = models.AutoField(primary_key=True)
-    agreement_number = models.CharField(max_length=20, unique=True)
+    agreement_number = models.CharField(max_length=10, unique=True)
     signature_date = models.DateTimeField(auto_now_add=True)
     payment_sum = models.DecimalField(max_digits=10, decimal_places=2)
-    booking = models.OneToOneField('Booking', on_delete=models.CASCADE, related_name='rental_agreement')
-    promo_code = models.ForeignKey('Promo_Code', on_delete=models.SET_NULL, null=True, blank=True, related_name='rental_agreements')
+    booking = models.OneToOneField('Booking', on_delete=models.CASCADE)
+    insurance = models.ForeignKey('Insurance', on_delete=models.SET_NULL, null=True, blank=True)
+    promo_code = models.ForeignKey('Promo_Code', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='rental_agreements')
 
     class Meta:
         managed = False
@@ -140,3 +156,27 @@ class Rental_Agreement(models.Model):
 
     def __str__(self):
         return f"Rental Agreement {self.agreement_number} for Booking {self.booking.id}"
+
+
+class ClientScore(models.Model):
+    client_score_id = models.AutoField(primary_key=True)
+    score = models.PositiveSmallIntegerField(
+        verbose_name="Score",
+        choices=[(i, str(i)) for i in range(1, 6)],
+        help_text="Score between 1 and 5"
+    )
+    comment = models.TextField(blank=True, null=True, verbose_name="Comment")
+    score_date = models.DateField(verbose_name="Score Date")
+    rental_agreement = models.OneToOneField(
+        Rental_Agreement,
+        on_delete=models.CASCADE,
+        verbose_name="Rental Agreement",
+        unique=True
+    )
+
+    class Meta:
+        managed = False
+        db_table = 'client_score'
+
+    def __str__(self):
+        return f"Score {self.score} for Agreement {self.rental_agreement}"

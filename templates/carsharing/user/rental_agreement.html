@@ -4,30 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rental Agreement</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const insuranceSelect = document.querySelector("select[name='insurance']");
+            const paymentSumElement = document.querySelector("#payment_sum");
+            const basePaymentSum = parseFloat({{ payment_sum|floatformat:2 }});
+
+            insuranceSelect.addEventListener("change", function () {
+                const selectedOption = insuranceSelect.options[insuranceSelect.selectedIndex];
+                const insuranceValue = parseFloat(selectedOption.getAttribute("data-value")) || 0;
+                const newPaymentSum = basePaymentSum + insuranceValue;
+                paymentSumElement.textContent = newPaymentSum.toFixed(2) + " UAH";
+            });
+        });
+    </script>
 </head>
 <body>
-    <h1>Створення договору оренди</h1>
+<h1>Створення договору оренди</h1>
 
-    <p><strong>Номер угоди:</strong> {{ agreement_number }}</p>
-    <p><strong>Дата підписання:</strong> {{ signature_date }}</p>
-    <p><strong>Сума до оплати:</strong> {{ payment_sum }} UAH</p>
+<p><strong>Номер угоди:</strong> {{ agreement_number }}</p>
+<p><strong>Дата підписання:</strong> {{ signature_date }}</p>
+<p><strong>Сума до оплати:</strong> <span id="payment_sum">{{ payment_sum }} UAH</span></p>
 
-    <form method="POST">
-        {% csrf_token %}
-        <label for="promo_code">Промокод:</label>
-        <input type="text" id="promo_code" name="promo_code" placeholder="Введіть промокод">
-        <button type="submit" name="apply_promo_code">Застосувати промокод</button>
-    </form>
+<form method="POST">
+    {% csrf_token %}
 
     {% if promo_code %}
         <p><strong>Застосовано промокод:</strong> {{ promo_code.code }}</p>
         <p><strong>Знижка:</strong> {{ discount }}%</p>
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" name="remove_promo_code">Видалити промокод</button>
+        </form>
+    {% else %}
+        <h3>Застосування промокоду:</h3>
+        <label for="promo_code">Промокод:</label>
+        <input type="text" id="promo_code" name="promo_code" placeholder="Введіть промокод">
+        <button type="submit" name="apply_promo_code">Застосувати промокод</button>
     {% endif %}
+
+    <h3>Вибір страхування:</h3>
+    <select name="insurance">
+        <option value="" data-value="0">Без страхування</option>
+        {% for insurance in insurances %}
+            <option value="{{ insurance.insurance_id }}" data-value="{{ insurance.insurance_value }}"
+                    {% if selected_insurance and insurance.insurance_id == selected_insurance.insurance_id %}selected{% endif %}>
+                {{ insurance.insurance_type }} - {{ insurance.insurance_value }} UAH
+            </option>
+        {% endfor %}
+    </select>
+    <br>
+    <br>
 
     <form method="POST" action="{% url 'confirm_rental_agreement' booking.booking_id %}">
         {% csrf_token %}
         <button type="submit" name="confirm">Підписати угоду</button>
     </form>
+
+    <br>
+
     <form method="GET" action="{% url 'cancel_rental_agreement' booking_id=booking.booking_id %}">
         <button type="submit" name="cancel">Скасувати</button>
     </form>

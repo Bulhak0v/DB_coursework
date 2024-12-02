@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, \
     BookingStepTwoForm, BookingStepThreeForm
-from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services, Rental_Agreement, Promo_Code
+from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services, Rental_Agreement, Promo_Code, \
+    Insurance
 from django.db.models import Sum, Count
 from datetime import datetime
+from datetime import timedelta
 from django.utils.timezone import make_aware, now
 import random
 
@@ -413,48 +415,96 @@ def user_make_booking_step_four(request, booking_id):
             if not Rental_Agreement.objects.filter(agreement_number=number).exists():
                 return number
 
-    agreement_number = generate_agreement_number()
-    request.session['agreement_number'] = agreement_number
+    agreement_number = request.session.get('agreement_number')
+    if not agreement_number:
+        agreement_number = generate_agreement_number()
+        request.session['agreement_number'] = agreement_number
 
-    payment_sum = request.session.get('payment_sum', float(booking.total_price))
+    # Початкові значення
+    insurances = Insurance.objects.all()
+    selected_insurance_id = request.session.get('selected_insurance_id')
+    selected_insurance = None
+    insurance_value = 0
+
+    if selected_insurance_id:
+        try:
+            selected_insurance = Insurance.objects.get(insurance_id=selected_insurance_id)
+            insurance_value = float(selected_insurance.insurance_value)
+        except Insurance.DoesNotExist:
+            selected_insurance = None
+
+    # Базова сума: ціна бронювання + страховка
+    base_payment_sum = float(booking.total_price) + insurance_value
+
+    # Перевірка промокоду в сесії
     promo_code = None
     discount = 0
+    applied_promo_code_id = request.session.get('promo_code')
 
-    if request.method == 'POST' and 'apply_promo_code' in request.POST:
-        if 'promo_code' in request.session:
-            context = {
-                'error_message': 'Промокод вже було застосовано.',
-                'agreement_number': agreement_number,
-                'signature_date': now(),
-                'payment_sum': payment_sum,
-                'booking': booking,
-                'promo_code': promo_code,
-                'discount': discount,
-            }
-            return render(request, 'carsharing/user/rental_agreement.html', context)
-
-        entered_code = request.POST.get('promo_code', '').strip()
-        try:
-            promo_code = Promo_Code.objects.get(code=entered_code, end_date__gte=now().date())
+    if applied_promo_code_id:
+        promo_code = Promo_Code.objects.filter(promo_code_id=applied_promo_code_id).first()
+        if promo_code:
             discount = promo_code.discount
-            payment_sum = payment_sum * (100 - discount) / 100
-            request.session['payment_sum'] = payment_sum
-            request.session['promo_code'] = promo_code.promo_code_id
-            booking.total_price = payment_sum
-            booking.save()
-        except Promo_Code.DoesNotExist:
-            context = {
-                'error_message': 'Введено недійсний промокод.',
-                'agreement_number': agreement_number,
-                'signature_date': now(),
-                'payment_sum': payment_sum,
-                'booking': booking,
-                'promo_code': promo_code,
-                'discount': discount,
-            }
-            return render(request, 'carsharing/user/rental_agreement.html', context)
+            payment_sum = base_payment_sum * (100 - discount) / 100
+        else:
+            payment_sum = base_payment_sum
+    else:
+        payment_sum = base_payment_sum
 
+    # Обробка дій POST
+    if request.method == 'POST':
+        if 'remove_promo_code' in request.POST:
+            # Видалення промокоду
+            request.session.pop('promo_code', None)
+            payment_sum = base_payment_sum
+            request.session['payment_sum'] = payment_sum
+            return redirect('user_booking_step_four', booking_id=booking_id)
+
+        if 'apply_promo_code' in request.POST:
+            # Застосування нового промокоду
+            entered_code = request.POST.get('promo_code', '').strip()
+            try:
+                new_promo_code = Promo_Code.objects.get(code=entered_code, end_date__gte=now().date())
+
+                # Перевірка, чи застосовано новий промокод
+                if applied_promo_code_id and applied_promo_code_id == new_promo_code.promo_code_id:
+                    context = {
+                        'error_message': 'Цей промокод вже застосовано.',
+                        'agreement_number': agreement_number,
+                        'signature_date': now(),
+                        'payment_sum': payment_sum,
+                        'booking': booking,
+                        'promo_code': promo_code,
+                        'discount': discount,
+                        'insurances': insurances,
+                        'selected_insurance': selected_insurance,
+                    }
+                    return render(request, 'carsharing/user/rental_agreement.html', context)
+
+                # Застосування нового промокоду
+                discount = new_promo_code.discount
+                payment_sum = base_payment_sum * (100 - discount) / 100
+                request.session['payment_sum'] = payment_sum
+                request.session['promo_code'] = new_promo_code.promo_code_id
+                promo_code = new_promo_code
+            except Promo_Code.DoesNotExist:
+                context = {
+                    'error_message': 'Введено недійсний промокод.',
+                    'agreement_number': agreement_number,
+                    'signature_date': now(),
+                    'payment_sum': payment_sum,
+                    'booking': booking,
+                    'promo_code': promo_code,
+                    'discount': discount,
+                    'insurances': insurances,
+                    'selected_insurance': selected_insurance,
+                }
+                return render(request, 'carsharing/user/rental_agreement.html', context)
+
+    # Збереження значення в сесії
     request.session['payment_sum'] = payment_sum
+    request.session['selected_insurance_id'] = selected_insurance_id
+
     context = {
         'agreement_number': agreement_number,
         'signature_date': now(),
@@ -462,6 +512,8 @@ def user_make_booking_step_four(request, booking_id):
         'booking': booking,
         'promo_code': promo_code,
         'discount': discount,
+        'insurances': insurances,
+        'selected_insurance': selected_insurance,
     }
     return render(request, 'carsharing/user/rental_agreement.html', context)
 
@@ -470,26 +522,31 @@ def confirm_rental_agreement(request, booking_id):
     booking = get_object_or_404(Booking, booking_id=booking_id)
     agreement_number = request.session.get('agreement_number')
     payment_sum = request.session.get('payment_sum')
-    if payment_sum is None:
-        return redirect('user_booking_step_four', booking_id=booking_id)
-
+    selected_insurance_id = request.session.get('selected_insurance_id')
     prom_code = request.session.get('promo_code')
+
     promo_code = None
     if prom_code:
         promo_code = get_object_or_404(Promo_Code, promo_code_id=prom_code)
 
-    Rental_Agreement.objects.create(
+    selected_insurance = None
+    if selected_insurance_id:
+        selected_insurance = get_object_or_404(Insurance, insurance_id=selected_insurance_id)
+
+    rental_agreement = Rental_Agreement.objects.create(
         agreement_number=agreement_number,
         signature_date=now(),
         payment_sum=payment_sum,
         booking=booking,
         promo_code=promo_code,
+        insurance = selected_insurance,
     )
-
     del request.session['agreement_number']
     del request.session['payment_sum']
+    del request.session['selected_insurance_id']
     request.session.pop('promo_code', None)
     return redirect('user_info')
+
 
 def cancel_rental_agreement(request, booking_id=None):
     booking_id = booking_id or request.session.get('current_booking_id')
@@ -501,6 +558,7 @@ def cancel_rental_agreement(request, booking_id=None):
         del request.session['payment_sum']
         request.session.pop('promo_code', None)
     return redirect('user_make_booking_step_one')
+
 
 def edit_user_info(request, pk):
     user = get_object_or_404(User, pk=pk)
