@@ -95,6 +95,7 @@ class Additional_Services(models.Model):
 
 
 class Booking_Services(models.Model):
+    booking_services_id = models.AutoField(primary_key=True)
     booking = models.ForeignKey(Booking, related_name='booking_services', on_delete=models.CASCADE)
     service = models.ForeignKey(Additional_Services, related_name='booking_services', on_delete=models.CASCADE)
     services_number = models.IntegerField(default=1)

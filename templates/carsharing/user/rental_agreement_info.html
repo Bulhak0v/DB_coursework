@@ -54,13 +54,23 @@
         <th>Payment Sum</th>
         <td>{{ agreement.payment_sum }}</td>
     </tr>
+    <tr>
+        <th>Insurance</th>
+        <td>
+            {% if insurance %}
+                {{ insurance.insurance_type }} ({{ insurance.insurance_value }} USD) - {{ insurance.insurance_details }}
+            {% else %}
+                No insurance
+            {% endif %}
+        </td>
+    </tr>
 </table>
 
 <h2>Booking Details</h2>
 <table class="table table-striped">
     <tr>
         <th>Car</th>
-        <td>{{ booking.car }}</td>
+        <td>{{ booking.car }} ({{ booking.car.price_per_day }} HRN per day)</td>
     </tr>
     <tr>
         <th>Start Date</th>
@@ -78,6 +88,31 @@
         <th>Client</th>
         <td>{{ booking.client.first_name }} {{ booking.client.last_name }}</td>
     </tr>
+</table>
+<h3>Additional Services</h3>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Service Name</th>
+        <th>Quantity</th>
+        <th>Total Price</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for booking_service in booking_services %}
+        <tr>
+            <td>{{ booking_service.service.name }}</td>
+            <td>{{ booking_service.services_number }}</td>
+            <td>{{ booking_service.service.price }}</td>
+            <td>{{ booking_service.service.description }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="4">No additional services.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
 </table>
 
 
