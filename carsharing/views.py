@@ -1,12 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, \
-    BookingStepTwoForm, BookingStepThreeForm, ClientScoreForm
+    BookingStepTwoForm, BookingStepThreeForm, ClientScoreForm, BranchForm
 from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services, Rental_Agreement, Promo_Code, \
     Insurance, ClientScore
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.http import HttpResponseForbidden
 from datetime import datetime
-from datetime import timedelta
 from django.utils.timezone import make_aware, now
 import random
 
@@ -64,30 +63,172 @@ def logout_page(request):
 
 def user_list(request):
     users = User.objects.all()
-    return render(request, 'carsharing/admin/user_list.html', {'users': users})
+
+    search_query = request.GET.get('search', '')
+    if search_query:
+        users = users.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(driver_license__icontains=search_query)
+        )
+
+    sort_by = request.GET.get('sort', 'user_id')
+    order = request.GET.get('order', 'asc')
+    allowed_fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'driver_license']
+
+    if sort_by in allowed_fields:
+        if order == 'desc':
+            sort_by = f'-{sort_by}'
+        users = users.order_by(sort_by)
+
+    context = {
+        'users': users,
+        'search_query': search_query,
+        'sort_by': sort_by.lstrip('-'),
+        'order': order
+    }
+
+    return render(request, 'carsharing/admin/user_list.html', context)
 
 
 def car_list(request):
     cars = Car.objects.all()
-    return render(request, 'carsharing/admin/car_list.html', {'cars': cars})
+    search_query = request.GET.get('search', '')
+    if search_query:
+        cars = cars.filter(
+            Q(brand__icontains=search_query) |
+            Q(model__icontains=search_query) |
+            Q(license_plate__icontains=search_query)
+        )
+
+    sort_by = request.GET.get('sort', 'car_id')
+    order = request.GET.get('order', 'asc')
+    allowed_fields = [
+        'car_id', 'car_type', 'brand', 'model',
+        'license_plate', 'release_year', 'price_per_day'
+    ]
+
+    if sort_by in allowed_fields:
+        if order == 'desc':
+            sort_by = f'-{sort_by}'
+        cars = cars.order_by(sort_by)
+
+    car_type = request.GET.get('car_type')
+    if car_type:
+        cars = cars.filter(car_type=car_type)
+
+    branch = request.GET.get('branch')
+    if branch:
+        cars = cars.filter(branch_id=branch)
+
+    context = {
+        'cars': cars,
+        'car_types': Car.objects.values_list('car_type', flat=True).distinct(),
+        'branches': Branch.objects.order_by('city', 'street'),
+        'search_query': search_query,
+        'selected_car_type': car_type,
+        'selected_branch': branch,
+        'sort_by': sort_by.lstrip('-'),
+        'order': order
+    }
+
+    return render(request, 'carsharing/admin/car_list.html', context)
 
 
 def booking_list(request):
     bookings = Booking.objects.all()
+
+    search_query = request.GET.get('search', '')
+    if search_query:
+        bookings = bookings.filter(
+            Q(client__first_name__icontains=search_query) |
+            Q(client__last_name__icontains=search_query) |
+            Q(car__brand__icontains=search_query) |
+            Q(car__model__icontains=search_query) |
+            Q(booking_id__icontains=search_query) |
+            Q(client__first_name__icontains=search_query.split()[0],
+              client__last_name__icontains=' '.join(search_query.split()[1:])) |
+            Q(car__brand__icontains=search_query.split()[0], car__model__icontains=' '.join(search_query.split()[1:]))
+        )
+
+    pickup_location_filter = request.GET.get('pickup_location', '')
+    if pickup_location_filter:
+        bookings = bookings.filter(pickup_location=pickup_location_filter)
+
+    return_location_filter = request.GET.get('return_location', '')
+    if return_location_filter:
+        bookings = bookings.filter(return_location=return_location_filter)
+
+    sort_by = request.GET.get('sort', 'booking_id')
+    order = request.GET.get('order', 'asc')
+    allowed_fields = [
+        'booking_id', 'client__first_name', 'client__last_name', 'car__brand',
+        'car__model', 'start_date', 'end_date', 'total_price', 'status', 'pickup_location', 'return_location'
+    ]
+
+    if sort_by in allowed_fields:
+        if order == 'desc':
+            sort_by = f'-{sort_by}'
+        bookings = bookings.order_by(sort_by)
+
     branches = {branch.branch_id: branch for branch in Branch.objects.all()}
 
     for booking in bookings:
-        booking.pickup_branch = branches.get(booking.pickup_location)
-        booking.return_branch = branches.get(booking.return_location)
+        booking.pickup_location = branches.get(booking.pickup_location)
+        booking.return_location = branches.get(booking.return_location)
 
-    return render(request, 'carsharing/admin/booking_list.html', {
+    branches_list = Branch.objects.all()
+
+    context = {
         'bookings': bookings,
-    })
+        'search_query': search_query,
+        'pickup_location_filter': pickup_location_filter,
+        'return_location_filter': return_location_filter,
+        'sort_by': sort_by.lstrip('-'),
+        'order': order,
+        'branches': branches_list,
+    }
+
+    return render(request, 'carsharing/admin/booking_list.html', context)
 
 
 def branches_list(request):
+    search_query = request.GET.get('search', '')
+    filter_city = request.GET.get('filter_city', '')
+    sort_by = request.GET.get('sort', 'branch_id')
+    order = request.GET.get('order', 'asc')
+
     branches = Branch.objects.all()
-    return render(request, 'carsharing/admin/branches_list.html', {'branches': branches})
+
+    if search_query:
+        branches = branches.filter(
+            Q(city__icontains=search_query) |
+            Q(street__icontains=search_query) |
+            Q(building__icontains=search_query) |
+            Q(zip_code__icontains=search_query)
+        )
+
+    if filter_city:
+        branches = branches.filter(city=filter_city)
+
+    allowed_fields = ['branch_id', 'city', 'street', 'building', 'zip_code']
+    if sort_by in allowed_fields:
+        if order == 'desc':
+            sort_by = f'-{sort_by}'
+        branches = branches.order_by(sort_by)
+
+    cities = Branch.objects.values_list('city', flat=True).distinct()
+
+    return render(request, 'carsharing/admin/branches_list.html', {
+        'branches': branches,
+        'search_query': search_query,
+        'filter_city': filter_city,
+        'cities': cities,
+        'sort_by': sort_by.lstrip('-'),
+        'order': order,
+    })
 
 
 def add_user(request):
@@ -105,8 +246,11 @@ def add_car(request):
     if request.method == "POST":
         form = CarForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('car_list')
+            if not form.cleaned_data.get('branch'):
+                form.add_error('branch', 'Необхідно обрати філію')
+            else:
+                form.save()
+                return redirect('car_list')
     else:
         form = CarForm()
     return render(request, 'carsharing/admin/add_car.html', {'form': form})
@@ -136,6 +280,18 @@ def add_booking(request):
         form = BookingForm()
 
     return render(request, 'carsharing/admin/add_booking.html', {'form': form})
+
+
+def add_branch(request):
+    if request.method == 'POST':
+        form = BranchForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('branches_list')
+    else:
+        form = BranchForm()
+
+    return render(request, 'carsharing/admin/add_branch.html', {'form': form})
 
 
 def edit_user(request, pk):
@@ -174,6 +330,19 @@ def edit_booking(request, pk):
     return render(request, 'carsharing/admin/edit_booking.html', {'form': form, 'booking': booking})
 
 
+def edit_branch(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    if request.method == 'POST':
+        form = BranchForm(request.POST, instance=branch)
+        if form.is_valid():
+            form.save()
+            return redirect('branches_list')
+    else:
+        form = BranchForm(instance=branch)
+
+    return render(request, 'carsharing/admin/edit_branch.html', {'form': form, 'branch': branch})
+
+
 def delete_user(request, pk):
     user = get_object_or_404(User, pk=pk)
     if request.method == "POST":
@@ -196,6 +365,14 @@ def delete_booking(request, pk):
         booking.delete()
         return redirect('booking_list')
     return render(request, 'carsharing/admin/confirm_delete.html', {'object': booking})
+
+
+def delete_branch(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    if request.method == "POST":
+        branch.delete()
+        return redirect('branches_list')
+    return render(request, 'carsharing/admin/confirm_delete.html', {'object': branch})
 
 
 def cancel_booking(request, pk):
@@ -253,6 +430,37 @@ def total_income(request):
 def most_popular_cars(request):
     cars_stats = Car.objects.annotate(bookings_count=Count('booking')).order_by('-bookings_count')
     return render(request, 'carsharing/admin/most_popular_cars.html', {'cars_stats': cars_stats})
+
+
+def get_services_statistics():
+    total_services_count = Booking_Services.objects.aggregate(total_services=Sum('services_number'))[
+                               'total_services'] or 0
+
+    services_statistics = Booking_Services.objects.values('service__name').annotate(
+        total_count=Sum('services_number')
+    ).order_by('service__name')
+
+    return total_services_count, services_statistics
+
+
+def additional_services_statistics(request):
+    total_services_count, services_statistics = get_services_statistics()
+    return render(request, 'carsharing/admin/additional_services_statistics.html', {
+        'total_services_count': total_services_count,
+        'services_statistics': services_statistics
+    })
+
+
+def insurance_usage_ratio(request):
+    total_rentals = Rental_Agreement.objects.count()
+    rentals_with_insurance = Rental_Agreement.objects.filter(insurance__isnull=False).count()
+    usage_ratio = (rentals_with_insurance / total_rentals) if total_rentals > 0 else 0
+
+    return render(request, 'carsharing/admin/insurance_usage_ratio.html', {
+        'total_rentals': total_rentals,
+        'rentals_with_insurance': rentals_with_insurance,
+        'usage_ratio': usage_ratio
+    })
 
 
 def user_bookings(request, user_id):
@@ -573,7 +781,8 @@ def rental_agreement_info(request, pk):
     booking = agreement.booking
     booking_services = Booking_Services.objects.filter(booking=booking).select_related('service')
     insurance = agreement.insurance
-    client_score = ClientScore.objects.filter(rental_agreement_id=agreement.rental_agreement_id).select_related('rental_agreement_id')
+    client_score = ClientScore.objects.filter(rental_agreement_id=agreement.rental_agreement_id).select_related(
+        'rental_agreement_id')
     context = {
         'agreement': agreement,
         'booking': booking,

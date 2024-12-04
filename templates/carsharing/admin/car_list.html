@@ -60,36 +60,142 @@
         </div>
     </div>
 </nav>
+<div class="container-fluid">
+    <h1>Car List</h1>
+    
+    <form method="get" class="mb-3">
+        <div class="row">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Пошук (бренд, модель, номер)" 
+                       value="{{ search_query }}">
+            </div>
+            
+            <div class="col-md-2">
+                <select name="car_type" class="form-control">
+                    <option value="">Усі типи авто</option>
+                    {% for type in car_types %}
+                        <option value="{{ type }}" 
+                                {% if type == selected_car_type %}selected{% endif %}>
+                            {{ type }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <select name="branch" class="form-control">
+                    <option value="">Усі філії</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch.branch_id }}" 
+                                {% if branch.branch_id|stringformat:'s' == selected_branch %}selected{% endif %}>
+                            {{ branch.city }}, {{ branch.street }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Пошук</button>
+                <a href="{% url 'car_list' %}" class="btn btn-secondary">Скинути</a>
+            </div>
+        </div>
+    </form>
 
-<h1>Car List</h1>
-<table class="table table-striped">
-    <tr>
-        <th>ID</th>
-        <th>Car Type</th>
-        <th>Brand</th>
-        <th>Model</th>
-        <th>License Plate</th>
-        <th>Release Year</th>
-        <th>Price per Day</th>
-    </tr>
-    {% for car in cars %}
-        <tr>
-            <td>{{ car.car_id }}</td>
-            <td>{{ car.car_type }}</td>
-            <td>{{ car.brand }}</td>
-            <td>{{ car.model }}</td>
-            <td>{{ car.license_plate }}</td>
-            <td>{{ car.release_year }}</td>
-            <td>{{ car.price_per_day }}</td>
-            <td><a href="{% url 'car_bookings' car.car_id %}">Bookings</a></td>
-            <td><a href="{% url 'edit_car' car.car_id %}">Edit</a></td>
-            <td><a href="{% url 'delete_car' car.car_id %}">Delete</a></td>
-        </tr>
-    {% endfor %}
-</table>
-<p>Here you can manage the cars.</p>
-<a href="{% url 'add_car' %}">
-    <button>Add New Car</button>
-</a>
+     <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    <a href="?sort=car_id&order={% if sort_by == 'car_id' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        ID 
+                        {% if sort_by == 'car_id' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=branch__city&order={% if sort_by == 'branch__city' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Філія 
+                        {% if sort_by == 'branch__city' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=car_type&order={% if sort_by == 'car_type' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Тип Авто
+                        {% if sort_by == 'car_type' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=brand&order={% if sort_by == 'brand' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Бренд
+                        {% if sort_by == 'brand' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=model&order={% if sort_by == 'model' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Модель
+                        {% if sort_by == 'model' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=license_plate&order={% if sort_by == 'license_plate' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Номерний знак
+                        {% if sort_by == 'license_plate' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=release_year&order={% if sort_by == 'release_year' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Рік випуску
+                        {% if sort_by == 'release_year' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=price_per_day&order={% if sort_by == 'price_per_day' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Ціна за день
+                        {% if sort_by == 'price_per_day' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for car in cars %}
+                <tr>
+                    <td>{{ car.car_id }}</td>
+                    <td>{{ car.branch.city }}, {{ car.branch.street }}</td>
+                    <td>{{ car.car_type }}</td>
+                    <td>{{ car.brand }}</td>
+                    <td>{{ car.model }}</td>
+                    <td>{{ car.license_plate }}</td>
+                    <td>{{ car.release_year }}</td>
+                    <td>{{ car.price_per_day }} грн</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'car_bookings' car.car_id %}" class="btn btn-info">Бронювання</a>
+                            <a href="{% url 'edit_car' car.car_id %}" class="btn btn-warning">Редагувати</a>
+                            <a href="{% url 'delete_car' car.car_id %}" class="btn btn-danger">Видалити</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'add_car' %}" class="btn btn-success">Додати новий автомобіль</a>
+</div>
 </body>
 </html>

@@ -9,6 +9,7 @@
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
             crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -150,19 +151,69 @@
 
 <script>
     document.getElementById('savePDFBtn').addEventListener('click', function () {
-        const {jsPDF} = window.jspdf;
+        const { jsPDF } = window.jspdf;
+
+        // Ініціалізація нового документа PDF
         const doc = new jsPDF();
+
+        // Додавання заголовка
+        doc.setFontSize(16);
         doc.text("Rental Agreement Information", 10, 10);
-        doc.text("Agreement Number: {{ agreement.agreement_number }}", 10, 20);
-        doc.text("Signature Date: {{ agreement.signature_date }}", 10, 30);
-        doc.text("Payment Sum: {{ agreement.payment_sum }}", 10, 40);
-        doc.text("Car: {{ booking.car }}", 10, 50);
-        doc.text("Start Date: {{ booking.start_date }}", 10, 60);
-        doc.text("End Date: {{ booking.end_date }}", 10, 70);
-        doc.text("Status: {{ booking.status }}", 10, 80);
-        doc.text("Client: {{ booking.client.first_name }} {{ booking.client.last_name }}", 10, 90);
+
+        let yPosition = 20;
+
+        // Додавання основної інформації про угоду
+        doc.setFontSize(12);
+        doc.text(`Agreement Number: {{ agreement.agreement_number }}`, 10, yPosition); yPosition += 10;
+        doc.text(`Signature Date: {{ agreement.signature_date }}`, 10, yPosition); yPosition += 10;
+        doc.text(`Payment Sum: {{ agreement.payment_sum }} USD`, 10, yPosition); yPosition += 10;
+
+        // Інформація про страхування
+        {% if agreement.insurance %}
+        doc.text(`Insurance: {{ agreement.insurance.insurance_type }} ({{ agreement.insurance.insurance_value }} USD)`, 10, yPosition); yPosition += 10;
+        doc.text(`Details: {{ agreement.insurance.insurance_details }}`, 10, yPosition); yPosition += 10;
+        {% else %}
+        doc.text("Insurance: No insurance selected", 10, yPosition); yPosition += 10;
+        {% endif %}
+
+        // Оцінка клієнта
+        {% if agreement.clientscore %}
+        doc.text("Client Score:", 10, yPosition); yPosition += 10;
+        doc.text(`Score: {{ agreement.clientscore.score }}`, 15, yPosition); yPosition += 10;
+        doc.text(`Comment: {{ agreement.clientscore.comment|default:"No comment" }}`, 15, yPosition); yPosition += 10;
+        doc.text(`Date: {{ agreement.clientscore.score_date }}`, 15, yPosition); yPosition += 10;
+        {% endif %}
+
+        // Деталі бронювання
+        doc.setFontSize(14);
+        doc.text("Booking Details", 10, yPosition); yPosition += 10;
+
+        doc.setFontSize(12);
+        doc.text(`Car: {{ booking.car }} ({{ booking.car.price_per_day }} HRN per day)`, 10, yPosition); yPosition += 10;
+        doc.text(`Start Date: {{ booking.start_date }}`, 10, yPosition); yPosition += 10;
+        doc.text(`End Date: {{ booking.end_date }}`, 10, yPosition); yPosition += 10;
+        doc.text(`Status: {{ booking.status }}`, 10, yPosition); yPosition += 10;
+        doc.text(`Client: {{ booking.client.first_name }} {{ booking.client.last_name }}`, 10, yPosition); yPosition += 10;
+
+        // Додаткові послуги
+        doc.setFontSize(14);
+        doc.text("Additional Services", 10, yPosition); yPosition += 10;
+
+        {% for booking_service in booking_services %}
+        doc.setFontSize(12);
+        doc.text(`Service Name: {{ booking_service.service.name }}`, 10, yPosition); yPosition += 10;
+        doc.text(`Quantity: {{ booking_service.services_number }}`, 15, yPosition); yPosition += 10;
+        doc.text(`Total Price: {{ booking_service.service.price }} USD`, 15, yPosition); yPosition += 10;
+        doc.text(`Description: {{ booking_service.service.description }}`, 15, yPosition); yPosition += 10;
+        {% empty %}
+        doc.text("No additional services.", 10, yPosition); yPosition += 10;
+        {% endfor %}
+
+        // Завантаження PDF
         doc.save('rental_agreement.pdf');
     });
 </script>
+
+
 </body>
 </html>

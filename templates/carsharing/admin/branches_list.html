@@ -3,24 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Branch List</title>
-    <style>
-        nav ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-        }
-
-        nav li {
-            margin-right: 20px;
-        }
-
-        nav a {
-            text-decoration: none;
-            color: black;
-            font-weight: bold;
-        }
-    </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
@@ -52,9 +34,9 @@
                         Statistics
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a>
+                        <li><a class="dropdown-item" href="{% url 'total_income' %}">Total income for the period</a>
                         </li>
-                        <li><a class="dropdown-item" href="{% url 'most_popular_cars' %}"> Most popular cars</a></li>
+                        <li><a class="dropdown-item" href="{% url 'most_popular_cars' %}">Most popular cars</a></li>
                     </ul>
                 </li>
             </ul>
@@ -62,28 +44,102 @@
     </div>
 </nav>
 
-<h1>Branch List</h1>
-<table class="table table-striped">
-    <tr>
-        <th>ID</th>
-        <th>City</th>
-        <th>Street</th>
-        <th>Building</th>
-        <th>ZIP code</th>
-    </tr>
-    {% for branch in branches %}
+<div class="container-fluid">
+    <h1>Branch List</h1>
+
+    <form method="get" class="mb-3">
+        <div class="row">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control"
+                       placeholder="Search (city, street, building, ZIP code)"
+                       value="{{ search_query }}">
+            </div>
+
+            <div class="col-md-3">
+                <select name="filter_city" class="form-select">
+                    <option value="">All Cities</option>
+                    {% for city in cities %}
+                        <option value="{{ city }}" {% if city == filter_city %}selected{% endif %}>
+                            {{ city }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{% url 'branches_list' %}" class="btn btn-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
         <tr>
-            <td>{{ branch.branch_id }}</td>
-            <td>{{ branch.city }}</td>
-            <td>{{ branch.street }}</td>
-            <td>{{ branch.building }}</td>
-            <td>{{ branch.zip_code }}</td>
+            <th>
+                <a href="?sort=branch_id&order={% if sort_by == 'branch_id' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                    ID
+                    {% if sort_by == 'branch_id' %}
+                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort=city&order={% if sort_by == 'city' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                    City
+                    {% if sort_by == 'city' %}
+                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort=street&order={% if sort_by == 'street' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Street
+                    {% if sort_by == 'street' %}
+                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort=building&order={% if sort_by == 'building' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Building
+                    {% if sort_by == 'building' %}
+                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort=zip_code&order={% if sort_by == 'zip_code' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                    ZIP Code
+                    {% if sort_by == 'zip_code' %}
+                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>Actions</th>
         </tr>
-    {% endfor %}
-</table>
-<p>Here you can manage branches.</p>
-<a href="{% url 'add_car' %}">
-    <button>Add New Branch</button>
-</a>
+        </thead>
+        <tbody>
+        {% for branch in branches %}
+            <tr>
+                <td>{{ branch.branch_id }}</td>
+                <td>{{ branch.city }}</td>
+                <td>{{ branch.street }}</td>
+                <td>{{ branch.building }}</td>
+                <td>{{ branch.zip_code }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'edit_branch' branch.branch_id %}" class="btn btn-warning">Edit</a>
+                        <a href="{% url 'delete_branch' branch.branch_id %}" class="btn btn-danger">Delete</a>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'add_branch' %}" class="btn btn-success">Add New Branch</a>
+</div>
+
 </body>
 </html>

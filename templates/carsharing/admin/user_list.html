@@ -61,33 +61,101 @@
     </div>
 </nav>
 
-<h1>User List</h1>
-<table class="table table-striped">
-    <tr>
-        <th>ID</th>
-        <th>First Name</th>
-        <th>Last Name</th>
-        <th>Email</th>
-        <th>Phone Number</th>
-        <th>Driver License</th>
-    </tr>
-    {% for user in users %}
-        <tr>
-            <td>{{ user.user_id }}</td>
-            <td>{{ user.first_name }}</td>
-            <td>{{ user.last_name }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.phone_number }}</td>
-            <td>{{ user.driver_license }}</td>
-            <td><a href="{% url 'user_bookings' user.user_id %}">Bookings</a></td>
-            <td><a href="{% url 'edit_user' user.user_id %}">Edit</a></td>
-            <td><a href="{% url 'delete_user' user.user_id %}">Delete</a></td>
-        </tr>
-    {% endfor %}
-</table>
-<p>Here you can manage the users.</p>
-<a href="{% url 'add_user' %}">
-    <button>Add New User</button>
-</a>
+<div class="container-fluid">
+    <h1>User List</h1>
+    
+    <form method="get" class="mb-3">
+        <div class="row">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Search (first name, last name, email, phone)" 
+                       value="{{ search_query }}">
+            </div>
+            
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{% url 'user_list' %}" class="btn btn-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    <a href="?sort=user_id&order={% if sort_by == 'user_id' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        ID
+                        {% if sort_by == 'user_id' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=first_name&order={% if sort_by == 'first_name' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        First Name
+                        {% if sort_by == 'first_name' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=last_name&order={% if sort_by == 'last_name' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Last Name
+                        {% if sort_by == 'last_name' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=email&order={% if sort_by == 'email' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Email
+                        {% if sort_by == 'email' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=phone_number&order={% if sort_by == 'phone_number' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Phone Number
+                        {% if sort_by == 'phone_number' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort=driver_license&order={% if sort_by == 'driver_license' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                        Driver License
+                        {% if sort_by == 'driver_license' %}
+                            {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.user_id }}</td>
+                    <td>{{ user.first_name }}</td>
+                    <td>{{ user.last_name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone_number }}</td>
+                    <td>{{ user.driver_license }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'user_bookings' user.user_id %}" class="btn btn-info">Bookings</a>
+                            <a href="{% url 'edit_user' user.user_id %}" class="btn btn-warning">Edit</a>
+                            <a href="{% url 'delete_user' user.user_id %}" class="btn btn-danger">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'add_user' %}" class="btn btn-success">Add New User</a>
+</div>
+
 </body>
 </html>

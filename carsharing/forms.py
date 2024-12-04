@@ -28,7 +28,7 @@ class UserForm(forms.ModelForm):
 class CarForm(forms.ModelForm):
     class Meta:
         model = Car
-        fields = ['car_type', 'brand', 'model', 'license_plate', 'release_year', 'price_per_day', 'car_status']
+        fields = ['branch', 'car_type', 'brand', 'model', 'license_plate', 'release_year', 'price_per_day', 'car_status']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -63,6 +63,10 @@ class BookingForm(forms.ModelForm):
                 )
         return cleaned_data
 
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = ['city', 'street', 'building', 'zip_code']
 
 class UserRegistrationForm(forms.ModelForm):
     class Meta:
