@@ -818,3 +818,79 @@ def rate_booking(request, pk):
         'form': form,
         'agreement': agreement
     })
+
+
+def additional_services_list(request):
+    services = Additional_Services.objects.all()
+    search_query = request.GET.get('search', '')
+    if search_query:
+        services = services.filter(
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    sort_by = request.GET.get('sort', 'name')
+    order = request.GET.get('order', 'asc')
+    allowed_fields = [
+        'service_id', 'name', 'description', 'price', 'service_status'
+    ]
+
+    if sort_by in allowed_fields:
+        if order == 'desc':
+            sort_by = f'-{sort_by}'
+        services = services.order_by(sort_by)
+
+    service_status = request.GET.get('service_status')
+    if service_status:
+        services = services.filter(service_status=service_status)
+
+    context = {
+        'services': services,
+        'search_query': search_query,
+        'sort_by': sort_by.lstrip('-'),
+        'order': order,
+        'service_status': service_status
+    }
+
+    return render(request, 'carsharing/admin/additional_services_list.html', context)
+
+
+def additional_service_add(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        price = request.POST.get('price')
+        service_status = request.POST.get('service_status') == 'on'
+
+        Additional_Services.objects.create(
+            name=name, description=description, price=price, service_status=service_status
+        )
+        return redirect('additional_services')
+
+    return render(request, 'carsharing/admin/additional_service_form.html', {'action': 'Add'})
+
+
+def additional_service_edit(request, service_id):
+    service = get_object_or_404(Additional_Services, service_id=service_id)
+
+    if request.method == 'POST':
+        service.name = request.POST.get('name')
+        service.description = request.POST.get('description')
+        service.price = request.POST.get('price')
+        service.service_status = request.POST.get('service_status') == 'on'
+        service.save()
+
+        return redirect('additional_services')
+
+    return render(request, 'carsharing/admin/additional_service_form.html', {
+        'service': service,
+        'action': 'Edit'
+    })
+
+
+def additional_service_delete(request, service_id):
+    service = get_object_or_404(Additional_Services, service_id=service_id)
+    if request.method == "POST":
+        service.delete()
+        return redirect('additional_services')
+    return render(request, 'carsharing/admin/confirm_delete.html', {'object': service})
