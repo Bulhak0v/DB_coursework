@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import UserForm, CarForm, BookingForm, UserRegistrationForm, UserLoginForm, BookingStepOneForm, \
-    BookingStepTwoForm, BookingStepThreeForm
+    BookingStepTwoForm, BookingStepThreeForm, ClientScoreForm
 from .models import User, Car, Booking, Branch, Additional_Services, Booking_Services, Rental_Agreement, Promo_Code, \
-    Insurance
+    Insurance, ClientScore
 from django.db.models import Sum, Count
+from django.http import HttpResponseForbidden
 from datetime import datetime
 from datetime import timedelta
 from django.utils.timezone import make_aware, now
@@ -211,6 +212,7 @@ def cancel_booking(request, pk):
         return redirect('user_info')
     return render(request, 'carsharing/user/confirm_cancel.html', {'object': booking})
 
+
 def complete_booking(request, pk):
     booking = get_object_or_404(Booking, pk=pk)
 
@@ -224,6 +226,7 @@ def complete_booking(request, pk):
         booking.save()
         return redirect('user_info')
     return render(request, 'carsharing/user/confirm_complete.html', {'object': booking})
+
 
 def total_income(request):
     total_income = None
@@ -515,7 +518,6 @@ def user_make_booking_step_four(request, booking_id):
     return render(request, 'carsharing/user/rental_agreement.html', context)
 
 
-
 def confirm_rental_agreement(request, booking_id):
     booking = get_object_or_404(Booking, booking_id=booking_id)
     agreement_number = request.session.get('agreement_number')
@@ -540,7 +542,6 @@ def confirm_rental_agreement(request, booking_id):
     request.session.pop('promo_code', None)
 
     return redirect('user_info')
-
 
 
 def cancel_rental_agreement(request, booking_id=None):
@@ -572,10 +573,39 @@ def rental_agreement_info(request, pk):
     booking = agreement.booking
     booking_services = Booking_Services.objects.filter(booking=booking).select_related('service')
     insurance = agreement.insurance
+    client_score = ClientScore.objects.filter(rental_agreement_id=agreement.rental_agreement_id).select_related('rental_agreement_id')
     context = {
         'agreement': agreement,
         'booking': booking,
         'booking_services': booking_services,
         'insurance': insurance,
+        'client_score': client_score
     }
     return render(request, 'carsharing/user/rental_agreement_info.html', context)
+
+
+def rate_booking(request, pk):
+    agreement = get_object_or_404(Rental_Agreement, pk=pk)
+
+    if agreement.booking.status != 'completed':
+        return HttpResponseForbidden("Rating is only allowed for completed bookings.")
+    if ClientScore.objects.filter(rental_agreement=agreement).exists():
+        return HttpResponseForbidden("You have already rated this booking.")
+
+    if request.method == 'POST':
+        form = ClientScoreForm(request.POST)
+        if form.is_valid():
+            ClientScore.objects.create(
+                score=form.cleaned_data['score'],
+                comment=form.cleaned_data['comment'],
+                score_date=now().date(),
+                rental_agreement=agreement
+            )
+            return redirect('rental_agreement_info', pk=pk)
+    else:
+        form = ClientScoreForm()
+
+    return render(request, 'carsharing/user/rate_booking.html', {
+        'form': form,
+        'agreement': agreement
+    })

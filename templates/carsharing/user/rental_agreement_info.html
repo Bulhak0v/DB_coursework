@@ -57,13 +57,30 @@
     <tr>
         <th>Insurance</th>
         <td>
-            {% if insurance %}
-                {{ insurance.insurance_type }} ({{ insurance.insurance_value }} USD) - {{ insurance.insurance_details }}
+            {% if agreement.insurance %}
+                {{ agreement.insurance.insurance_type }} ({{ agreement.insurance.insurance_value }} USD) -
+                {{ agreement.insurance.insurance_details }}
             {% else %}
                 No insurance
             {% endif %}
         </td>
     </tr>
+    {% if agreement.clientscore %}
+        <tr>
+            <th>Client Score</th>
+            <td>
+                Score: {{ agreement.clientscore.score }} <br>
+                Comment: {{ agreement.clientscore.comment|default:"No comment" }} <br>
+                Date: {{ agreement.clientscore.score_date }}
+            </td>
+        </tr>
+    {% endif %}
+    {% if agreement.promo_code %}
+        <tr>
+            <th>Promo Code</th>
+            <td>{{ agreement.promo_code.code }} - Discount: {{ agreement.promo_code.discount }}%</td>
+        </tr>
+    {% endif %}
 </table>
 
 <h2>Booking Details</h2>
@@ -120,6 +137,16 @@
     <button class="btn btn-secondary">Back to User Info</button>
 </a>
 <button id="savePDFBtn" class="btn btn-primary">Save as PDF</button>
+
+{% if booking.status == 'completed' %}
+    {% if not agreement.clientscore %}
+        <a href="{% url 'rate_booking' agreement.rental_agreement_id %}">
+            <button class="btn btn-success">Rate</button>
+        </a>
+    {% else %}
+        <p class="text-success">You have already rated this booking.</p>
+    {% endif %}
+{% endif %}
 
 <script>
     document.getElementById('savePDFBtn').addEventListener('click', function () {

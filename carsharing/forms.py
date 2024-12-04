@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Car, Booking, Branch, Additional_Services
+from .models import User, Car, Booking, Branch, Additional_Services, ClientScore
 
 
 class UserForm(forms.ModelForm):
@@ -104,9 +104,11 @@ class BookingStepOneForm(forms.ModelForm):
         label="Return Location",
         widget=forms.Select
     )
+
     class Meta:
         model = Booking
         fields = ['start_date', 'end_date', 'pickup_branch', 'return_branch']
+
 
 class BookingStepTwoForm(forms.Form):
     car = forms.ModelChoiceField(
@@ -119,6 +121,7 @@ class BookingStepTwoForm(forms.Form):
         model = Booking
         fields = ['car']
 
+
 class BookingStepThreeForm(forms.Form):
     services = forms.ModelMultipleChoiceField(
         queryset=Additional_Services.objects.filter(service_status=True),
@@ -126,3 +129,13 @@ class BookingStepThreeForm(forms.Form):
         label="Additional Services",
         required=False
     )
+
+
+class ClientScoreForm(forms.ModelForm):
+    class Meta:
+        model = ClientScore
+        fields = ['score', 'comment']
+        widgets = {
+            'score': forms.Select(attrs={'class': 'form-select'}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }

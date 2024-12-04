@@ -35,4 +35,5 @@ urlpatterns = [
     path('user_info/complete_booking/<int:pk>/', views.complete_booking, name='complete_booking'),
     path('user_info/edit/<int:pk>/', views.edit_user_info, name='edit_user_info'),
     path('user_info/rental_agreement_info/<int:pk>/', views.rental_agreement_info, name='rental_agreement_info'),
+    path('rate-booking/<int:pk>/', views.rate_booking, name='rate_booking'),
 ]
