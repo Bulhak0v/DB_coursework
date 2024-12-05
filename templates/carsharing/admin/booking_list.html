@@ -66,18 +66,17 @@
 
 <form method="get" class="mb-3">
     <div class="row">
-        <div class="col-md-3">
-            <input type="text" name="search" class="form-control" 
-                   placeholder="Search (Client, Car, Booking ID)" 
+        <div class="col-md-2">
+            <input type="text" name="search" class="form-control"
+                   placeholder="Search (Client, Car, Booking ID)"
                    value="{{ search_query }}">
         </div>
 
-        <!-- Фільтрація за Pickup Location -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <select name="pickup_location" class="form-control">
                 <option value="">All Pickup Locations</option>
                 {% for branch in branches %}
-                    <option value="{{ branch.branch_id }}" 
+                    <option value="{{ branch.branch_id }}"
                             {% if branch.branch_id|stringformat:'s' == pickup_location_filter %}selected{% endif %}>
                         {{ branch.city }}, {{ branch.street }}
                     </option>
@@ -85,19 +84,36 @@
             </select>
         </div>
 
-        <!-- Фільтрація за Return Location -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <select name="return_location" class="form-control">
                 <option value="">All Return Locations</option>
                 {% for branch in branches %}
-                    <option value="{{ branch.branch_id }}" 
+                    <option value="{{ branch.branch_id }}"
                             {% if branch.branch_id|stringformat:'s' == return_location_filter %}selected{% endif %}>
                         {{ branch.city }}, {{ branch.street }}
                     </option>
                 {% endfor %}
             </select>
         </div>
-        
+
+        <div class="col-md-2">
+            <input type="number" name="total_price_min" class="form-control"
+                   placeholder="Min Price" value="{{ total_price_min }}">
+        </div>
+
+        <div class="col-md-2">
+            <input type="number" name="total_price_max" class="form-control"
+                   placeholder="Max Price" value="{{ total_price_max }}">
+        </div>
+
+        <div class="col-md-2">
+            <input type="date" name="start_date_filter" class="form-control" value="{{ start_date_filter }}">
+        </div>
+
+        <div class="col-md-2">
+            <input type="date" name="end_date_filter" class="form-control" value="{{ end_date_filter }}">
+        </div>
+
         <div class="col-md-2">
             <button type="submit" class="btn btn-primary">Search</button>
             <a href="{% url 'booking_list' %}" class="btn btn-secondary">Reset</a>
@@ -107,109 +123,107 @@
 
 <table class="table table-striped">
     <thead>
-        <tr>
-            <th>
-                <a href="?sort=booking_id&order={% if sort_by == 'booking_id' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    ID 
-                    {% if sort_by == 'booking_id' %} 
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=client__first_name&order={% if sort_by == 'client__first_name' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Client
-                    {% if sort_by == 'client__first_name' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=car__brand&order={% if sort_by == 'car__brand' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Car
-                    {% if sort_by == 'car__brand' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=start_date&order={% if sort_by == 'start_date' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Start Date
-                    {% if sort_by == 'start_date' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=end_date&order={% if sort_by == 'end_date' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    End Date
-                    {% if sort_by == 'end_date' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=total_price&order={% if sort_by == 'total_price' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Total Price
-                    {% if sort_by == 'total_price' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=status&order={% if sort_by == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Status
-                    {% if sort_by == 'status' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=pickup_location&order={% if sort_by == 'pickup_location' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Pickup Location
-                    {% if sort_by == 'pickup_location' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="?sort=return_location&order={% if sort_by == 'return_location' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Return Location
-                    {% if sort_by == 'return_location' %}
-                        {% if order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-        </tr>
+    <tr>
+        <th>
+            <a href="?sort=booking_id&order={% if sort_by == 'booking_id' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Booking ID
+                {% if sort_by == 'booking_id' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=client__first_name&order={% if sort_by == 'client__first_name' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Client
+                {% if sort_by == 'client__first_name' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=car__brand&order={% if sort_by == 'car__brand' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Car
+                {% if sort_by == 'car__brand' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=start_date&order={% if sort_by == 'start_date' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Start Date
+                {% if sort_by == 'start_date' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=end_date&order={% if sort_by == 'end_date' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                End Date
+                {% if sort_by == 'end_date' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=pickup_location&order={% if sort_by == 'pickup_location' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Pickup Location
+                {% if sort_by == 'pickup_location' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=return_location&order={% if sort_by == 'return_location' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Return Location
+                {% if sort_by == 'return_location' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=total_price&order={% if sort_by == 'total_price' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Total Price
+                {% if sort_by == 'total_price' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=status&order={% if sort_by == 'status' and order == 'asc' %}desc{% else %}asc{% endif %}&search={{ search_query }}&pickup_location={{ pickup_location_filter }}&return_location={{ return_location_filter }}&total_price_min={{ total_price_min }}&total_price_max={{ total_price_max }}&start_date_min={{ start_date_min }}&start_date_max={{ start_date_max }}">
+                Status
+                {% if sort_by == 'status' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+    </tr>
     </thead>
     <tbody>
-        {% for booking in bookings %}
-            <tr>
-                <td>{{ booking.booking_id }}</td>
-                <td>{{ booking.client.first_name }} {{ booking.client.last_name }}</td>
-                <td>{{ booking.car.brand }} {{ booking.car.model }}</td>
-                <td>{{ booking.start_date }}</td>
-                <td>{{ booking.end_date }}</td>
-                <td>{{ booking.total_price }} грн</td>
-                <td>{{ booking.status }}</td>
-                <td>
-                    {% if booking.pickup_location %}
-                        {{ booking.pickup_location.city }} {{ booking.pickup_location.street }}
-                    {% else %}
-                        Unknown
-                    {% endif %}
-                </td>
-                <td>
-                    {% if booking.return_location %}
-                        {{ booking.return_location.city }} {{ booking.return_location.street }}
-                    {% else %}
-                        Unknown
-                    {% endif %}
-                </td>
-                <td><a href="{% url 'edit_booking' booking.booking_id %}">Edit</a></td>
-                <td><a href="{% url 'delete_booking' booking.booking_id %}">Delete</a></td>
-            </tr>
-        {% endfor %}
+    {% for booking in bookings %}
+        <tr>
+            <td>{{ booking.booking_id }}</td>
+            <td>{{ booking.client.first_name }} {{ booking.client.last_name }}</td>
+            <td>{{ booking.car.brand }} {{ booking.car.model }}</td>
+            <td>{{ booking.start_date }}</td>
+            <td>{{ booking.end_date }}</td>
+            <td>
+                {% if booking.pickup_location %}
+                    {{ booking.pickup_location.city }}, {{ booking.pickup_location.street }}
+                {% else %}
+                    Unknown
+                {% endif %}
+            </td>
+            <td>
+                {% if booking.return_location %}
+                    {{ booking.return_location.city }}, {{ booking.return_location.street }}
+                {% else %}
+                    Unknown
+                {% endif %}
+            </td>
+            <td>{{ booking.total_price }}</td>
+            <td>{{ booking.status }}</td>
+        </tr>
+    {% endfor %}
     </tbody>
 </table>
 

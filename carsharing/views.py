@@ -93,8 +93,14 @@ def user_list(request):
     return render(request, 'carsharing/admin/user_list.html', context)
 
 
+from django.shortcuts import render
+from .models import Car, Branch
+from django.db.models import Q
+
+
 def car_list(request):
     cars = Car.objects.all()
+
     search_query = request.GET.get('search', '')
     if search_query:
         cars = cars.filter(
@@ -103,13 +109,25 @@ def car_list(request):
             Q(license_plate__icontains=search_query)
         )
 
+    release_year_min = request.GET.get('release_year_min')
+    release_year_max = request.GET.get('release_year_max')
+    if release_year_min and release_year_min.strip():
+        try:
+            cars = cars.filter(release_year__gte=int(release_year_min))
+        except ValueError:
+            pass
+    if release_year_max and release_year_max.strip():
+        try:
+            cars = cars.filter(release_year__lte=int(release_year_max))
+        except ValueError:
+            pass
+
     sort_by = request.GET.get('sort', 'car_id')
     order = request.GET.get('order', 'asc')
     allowed_fields = [
         'car_id', 'car_type', 'brand', 'model',
         'license_plate', 'release_year', 'price_per_day'
     ]
-
     if sort_by in allowed_fields:
         if order == 'desc':
             sort_by = f'-{sort_by}'
@@ -131,7 +149,9 @@ def car_list(request):
         'selected_car_type': car_type,
         'selected_branch': branch,
         'sort_by': sort_by.lstrip('-'),
-        'order': order
+        'order': order,
+        'release_year_min': release_year_min,
+        'release_year_max': release_year_max
     }
 
     return render(request, 'carsharing/admin/car_list.html', context)
@@ -147,10 +167,7 @@ def booking_list(request):
             Q(client__last_name__icontains=search_query) |
             Q(car__brand__icontains=search_query) |
             Q(car__model__icontains=search_query) |
-            Q(booking_id__icontains=search_query) |
-            Q(client__first_name__icontains=search_query.split()[0],
-              client__last_name__icontains=' '.join(search_query.split()[1:])) |
-            Q(car__brand__icontains=search_query.split()[0], car__model__icontains=' '.join(search_query.split()[1:]))
+            Q(booking_id__icontains=search_query)
         )
 
     pickup_location_filter = request.GET.get('pickup_location', '')
@@ -160,6 +177,37 @@ def booking_list(request):
     return_location_filter = request.GET.get('return_location', '')
     if return_location_filter:
         bookings = bookings.filter(return_location=return_location_filter)
+
+    total_price_min = request.GET.get('total_price_min')
+    total_price_max = request.GET.get('total_price_max')
+    if total_price_min and total_price_min.strip():
+        try:
+            bookings = bookings.filter(total_price__gte=float(total_price_min))
+        except ValueError:
+            pass
+
+    if total_price_max and total_price_max.strip():
+        try:
+            bookings = bookings.filter(total_price__lte=float(total_price_max))
+        except ValueError:
+            pass
+
+    start_date_filter = request.GET.get('start_date_filter', '')
+    end_date_filter = request.GET.get('end_date_filter', '')
+
+    if start_date_filter:
+        try:
+            start_date = datetime.strptime(start_date_filter, '%Y-%m-%d').date()
+            bookings = bookings.filter(start_date__gte=start_date)
+        except ValueError:
+            pass
+
+    if end_date_filter:
+        try:
+            end_date = datetime.strptime(end_date_filter, '%Y-%m-%d').date()
+            bookings = bookings.filter(end_date__lte=end_date)
+        except ValueError:
+            pass
 
     sort_by = request.GET.get('sort', 'booking_id')
     order = request.GET.get('order', 'asc')
@@ -186,6 +234,10 @@ def booking_list(request):
         'search_query': search_query,
         'pickup_location_filter': pickup_location_filter,
         'return_location_filter': return_location_filter,
+        'total_price_min': total_price_min,
+        'total_price_max': total_price_max,
+        'start_date_filter': start_date_filter,
+        'end_date_filter': end_date_filter,
         'sort_by': sort_by.lstrip('-'),
         'order': order,
         'branches': branches_list,
