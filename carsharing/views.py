@@ -543,7 +543,61 @@ def user_info(request):
 
 def user_cars(request):
     cars = Car.objects.all()
-    return render(request, 'carsharing/user/user_cars_page.html', {'cars': cars})
+
+    search_query = request.GET.get('search', '')
+    if search_query:
+        cars = cars.filter(
+            Q(brand__icontains=search_query) |
+            Q(model__icontains=search_query)
+        )
+
+    release_year_min = request.GET.get('release_year_min')
+    release_year_max = request.GET.get('release_year_max')
+    if release_year_min and release_year_min.strip():
+        try:
+            cars = cars.filter(release_year__gte=int(release_year_min))
+        except ValueError:
+            pass
+    if release_year_max and release_year_max.strip():
+        try:
+            cars = cars.filter(release_year__lte=int(release_year_max))
+        except ValueError:
+            pass
+
+    sort_by = request.GET.get('sort', 'car_id')
+    order = request.GET.get('order', 'asc')
+    allowed_fields = [
+        'car_id', 'car_type', 'brand', 'model',
+        'license_plate', 'release_year', 'price_per_day'
+    ]
+    if sort_by in allowed_fields:
+        if order == 'desc':
+            sort_by = f'-{sort_by}'
+        cars = cars.order_by(sort_by)
+
+    car_type = request.GET.get('car_type')
+    if car_type:
+        cars = cars.filter(car_type=car_type)
+
+    branch = request.GET.get('branch')
+    if branch:
+        cars = cars.filter(branch_id=branch)
+
+    context = {
+        'cars': cars,
+        'car_types': Car.objects.values_list('car_type', flat=True).distinct(),
+        'branches': Branch.objects.order_by('city', 'street'),
+        'search_query': search_query,
+        'selected_car_type': car_type,
+        'selected_branch': branch,
+        'sort_by': sort_by.lstrip('-'),
+        'order': order,
+        'release_year_min': release_year_min,
+        'release_year_max': release_year_max
+    }
+
+    return render(request, 'carsharing/user/user_cars_page.html', context)
+
 
 
 def user_make_booking_step_one(request):
@@ -630,58 +684,47 @@ def user_make_booking_step_two(request):
 
 
 def user_make_booking_step_three(request):
-    start_date_str = request.session.get('start_date')
-    end_date_str = request.session.get('end_date')
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S')
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S')
-
-    selected_car_id = Car.objects.get(car_id=request.session.get('selected_car_id'))
-
-    pickup_branch_id = request.session.get('pickup_branch')
-    pickup_branch = Branch.objects.get(branch_id=pickup_branch_id)
-
-    return_branch_id = request.session.get('return_branch')
-    return_branch = Branch.objects.get(branch_id=return_branch_id)
+    services = Additional_Services.objects.filter(service_status=True)
 
     if request.method == 'POST':
-        form = BookingStepThreeForm(request.POST)
+        form = BookingStepThreeForm(request.POST, services=services)
         if form.is_valid():
             booking = Booking.objects.create(
                 client=User.objects.get(pk=request.session['user_id']),
-                car=selected_car_id,
-                start_date=start_date,
-                end_date=end_date,
-                total_price=request.session.get('total_price'),
+                car=Car.objects.get(car_id=request.session.get('selected_car_id')),
+                start_date=make_aware(datetime.strptime(request.session['start_date'], '%Y-%m-%d %H:%M:%S')),
+                end_date=make_aware(datetime.strptime(request.session['end_date'], '%Y-%m-%d %H:%M:%S')),
+                total_price=request.session['total_price'],
                 status='reserved',
-                pickup_location=pickup_branch_id,
-                return_location=return_branch_id,
+                pickup_location=request.session.get('pickup_branch'),
+                return_location=request.session.get('return_branch'),
             )
 
-            selected_services = form.cleaned_data['services']
-            for service in selected_services:
-                Booking_Services.objects.create(
-                    booking=booking,
-                    service=service,
-                    services_number=1
-                )
-
             total_price = booking.total_price
-            for service in selected_services:
-                total_price += service.price
+            for service in services:
+                quantity = form.cleaned_data.get(f"service_{service.service_id}_quantity", 0)
+                if quantity > 0:
+                    Booking_Services.objects.create(
+                        booking=booking,
+                        service=service,
+                        services_number=quantity
+                    )
+                    total_price += service.price * quantity
+
             booking.total_price = total_price
             booking.save()
 
             return redirect('user_booking_step_four', booking_id=booking.booking_id)
 
     else:
-        form = BookingStepThreeForm()
+        form = BookingStepThreeForm(services=services)
 
     return render(request, 'carsharing/user/user_booking_step_three.html', {
         'form': form,
-        'selected_car': selected_car_id,
-        'pickup_branch': pickup_branch,
-        'return_branch': return_branch,
+        'services': services,
     })
+
+
 
 
 def user_make_booking_step_four(request, booking_id):

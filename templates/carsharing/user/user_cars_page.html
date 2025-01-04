@@ -58,25 +58,121 @@
 </nav>
 
 <h1>List of cars</h1>
+<form method="get" class="mb-3">
+    <div class="row">
+        <div class="col-md-3">
+            <input type="text" name="search" class="form-control"
+                   placeholder="Search (brand, movel)"
+                   value="{{ search_query }}">
+        </div>
+
+        <div class="col-md-2">
+            <select name="car_type" class="form-control">
+                <option value="">All types</option>
+                {% for type in car_types %}
+                    <option value="{{ type }}"
+                            {% if type == selected_car_type %}selected{% endif %}>
+                        {{ type }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select name="branch" class="form-control">
+                <option value="">All branches</option>
+                {% for branch in branches %}
+                    <option value="{{ branch.branch_id }}"
+                            {% if branch.branch_id|stringformat:'s' == selected_branch %}selected{% endif %}>
+                        {{ branch.city }}, {{ branch.street }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <input type="number" name="release_year_min" class="form-control"
+                   placeholder="Release year (from)"
+                   value="{{ release_year_min }}">
+        </div>
+
+        <div class="col-md-2">
+            <input type="number" name="release_year_max" class="form-control"
+                   placeholder="Release year (to)"
+                   value="{{ release_year_max }}">
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a href="{% url 'user_cars' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </div>
+</form>
 <table class="table table-striped">
+    <thead>
     <tr>
-        <th>Car Type</th>
-        <th>Brand</th>
-        <th>Model</th>
-        <th>Release Year</th>
-        <th>Price per Day</th>
-        <th>Branch city</th>
+        <th>
+            <a href="?sort=branch__city&order={% if sort_by == 'branch__city' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                Branch
+                {% if sort_by == 'branch__city' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=car_type&order={% if sort_by == 'car_type' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                Type
+                {% if sort_by == 'car_type' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=brand&order={% if sort_by == 'brand' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                Brand
+                {% if sort_by == 'brand' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=model&order={% if sort_by == 'model' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                Model
+                {% if sort_by == 'model' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=release_year&order={% if sort_by == 'release_year' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                Year
+                {% if sort_by == 'release_year' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
+        <th>
+            <a href="?sort=price_per_day&order={% if sort_by == 'price_per_day' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                Price per day
+                {% if sort_by == 'price_per_day' %}
+                    {% if order == 'asc' %}▲{% else %}▼{% endif %}
+                {% endif %}
+            </a>
+        </th>
     </tr>
+    </thead>
+    <tbody>
     {% for car in cars %}
         <tr>
+            <td>{{ car.branch.city }}, {{ car.branch.street }}</td>
             <td>{{ car.car_type }}</td>
             <td>{{ car.brand }}</td>
             <td>{{ car.model }}</td>
             <td>{{ car.release_year }}</td>
-            <td>{{ car.price_per_day }}</td>
-            <td>{{ car.branch.city }}</td>
+            <td>{{ car.price_per_day }} $</td>
         </tr>
     {% endfor %}
+    </tbody>
 </table>
 <p>Here you can discover the cars.</p>
 </body>

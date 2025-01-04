@@ -127,12 +127,16 @@ class BookingStepTwoForm(forms.Form):
 
 
 class BookingStepThreeForm(forms.Form):
-    services = forms.ModelMultipleChoiceField(
-        queryset=Additional_Services.objects.filter(service_status=True),
-        widget=forms.CheckboxSelectMultiple,
-        label="Additional Services",
-        required=False
-    )
+    def __init__(self, *args, **kwargs):
+        services = kwargs.pop('services')
+        super().__init__(*args, **kwargs)
+        for service in services:
+            self.fields[f"service_{service.service_id}_quantity"] = forms.IntegerField(
+                label=f"{service.name} (₴{service.price})",
+                min_value=0,
+                initial=0,
+                required=False
+            )
 
 
 class ClientScoreForm(forms.ModelForm):

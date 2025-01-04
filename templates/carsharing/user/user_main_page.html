@@ -26,6 +26,17 @@
             color: black;
             font-weight: bold;
         }
+
+        .container {
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .btn {
+            margin: 10px;
+            width: 200px;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
@@ -59,7 +70,13 @@
     </div>
 </nav>
 
-<h1>Welcome to the Car Rental System</h1>
-<p></p>
+<div class="container">
+    <h1>Welcome to the Car Rental System</h1>
+
+    <a href="{% url 'user_make_booking_step_one' %}" class="btn btn-primary">Make a Booking</a>
+    <a href="{% url 'user_cars' %}" class="btn btn-secondary">View Cars</a>
+    <a href="{% url 'user_info' %}" class="btn btn-success">Account Info</a>
+</div>
+
 </body>
 </html>

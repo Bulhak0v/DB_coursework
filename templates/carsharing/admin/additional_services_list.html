@@ -28,14 +28,30 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'booking_list' %}">Bookings</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'branches_list' %}">Branches</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'additional_services' %}">Additional services</a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link" href="#" data-bs-toggle="dropdown" aria-expanded="false" role="button">
                         Statistics
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a>
-                        </li>
+                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a></li>
                         <li><a class="dropdown-item" href="{% url 'most_popular_cars' %}"> Most popular cars</a></li>
+                        <li><a class="dropdown-item" href="{% url 'additional_services_statistics' %}"> Additional services</a></li>
+                        <li><a class="dropdown-item" href="{% url 'insurance_usage_ratio' %}"> Insurance usage ratio</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" href="#" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        Account
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{% url 'user_info' %}"> Account info</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"> Logout</a></li>
                     </ul>
                 </li>
             </ul>
@@ -49,21 +65,21 @@
         <div class="row">
             <div class="col-md-3">
                 <input type="text" name="search" class="form-control"
-                       placeholder="Пошук (назва, опис)"
+                       placeholder="Search (name, description)"
                        value="{{ search_query }}">
             </div>
 
             <div class="col-md-2">
                 <select name="service_status" class="form-control">
-                    <option value="">Усі статуси</option>
-                    <option value="True" {% if service_status == 'True' %}selected{% endif %}>Активні</option>
-                    <option value="False" {% if service_status == 'False' %}selected{% endif %}>Неактивні</option>
+                    <option value="">All statuses</option>
+                    <option value="True" {% if service_status == 'True' %}selected{% endif %}>Active</option>
+                    <option value="False" {% if service_status == 'False' %}selected{% endif %}>Inactive</option>
                 </select>
             </div>
 
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary">Пошук</button>
-                <a href="{% url 'additional_services' %}" class="btn btn-secondary">Скинути</a>
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{% url 'additional_services' %}" class="btn btn-secondary">Reset</a>
             </div>
         </div>
     </form>
@@ -81,23 +97,23 @@
             </th>
             <th>
                 <a href="?sort=name&order={% if sort_by == 'name' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Назва
+                    Name
                     {% if sort_by == 'name' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
                 </a>
             </th>
-            <th>Опис</th>
+            <th>Description</th>
             <th>
                 <a href="?sort=price&order={% if sort_by == 'price' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Ціна
+                    Price
                     {% if sort_by == 'price' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
                 </a>
             </th>
-            <th>Статус</th>
-            <th>Дії</th>
+            <th>Status</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -106,12 +122,12 @@
                 <td>{{ service.service_id }}</td>
                 <td>{{ service.name }}</td>
                 <td>{{ service.description }}</td>
-                <td>{{ service.price }} грн</td>
+                <td>{{ service.price }} USD</td>
                 <td>{{ service.service_status|yesno:"Active,Non-active" }}</td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
-                        <a href="{% url 'additional_service_edit' service.service_id %}" class="btn btn-warning">Редагувати</a>
-                        <a href="{% url 'additional_service_delete' service.service_id %}" class="btn btn-danger">Видалити</a>
+                        <a href="{% url 'additional_service_edit' service.service_id %}" class="btn btn-warning">Edit</a>
+                        <a href="{% url 'additional_service_delete' service.service_id %}" class="btn btn-danger">Delete</a>
                     </div>
                 </td>
             </tr>

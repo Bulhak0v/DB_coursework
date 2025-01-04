@@ -88,7 +88,7 @@
 <table class="table table-striped">
     <tr>
         <th>Car</th>
-        <td>{{ booking.car }} ({{ booking.car.price_per_day }} HRN per day)</td>
+        <td>{{ booking.car }} ({{ booking.car.price_per_day }} USD per day)</td>
     </tr>
     <tr>
         <th>Start Date</th>
@@ -153,22 +153,18 @@
     document.getElementById('savePDFBtn').addEventListener('click', function () {
         const { jsPDF } = window.jspdf;
 
-        // Ініціалізація нового документа PDF
         const doc = new jsPDF();
 
-        // Додавання заголовка
         doc.setFontSize(16);
         doc.text("Rental Agreement Information", 10, 10);
 
         let yPosition = 20;
 
-        // Додавання основної інформації про угоду
         doc.setFontSize(12);
         doc.text(`Agreement Number: {{ agreement.agreement_number }}`, 10, yPosition); yPosition += 10;
         doc.text(`Signature Date: {{ agreement.signature_date }}`, 10, yPosition); yPosition += 10;
         doc.text(`Payment Sum: {{ agreement.payment_sum }} USD`, 10, yPosition); yPosition += 10;
 
-        // Інформація про страхування
         {% if agreement.insurance %}
         doc.text(`Insurance: {{ agreement.insurance.insurance_type }} ({{ agreement.insurance.insurance_value }} USD)`, 10, yPosition); yPosition += 10;
         doc.text(`Details: {{ agreement.insurance.insurance_details }}`, 10, yPosition); yPosition += 10;
@@ -176,7 +172,6 @@
         doc.text("Insurance: No insurance selected", 10, yPosition); yPosition += 10;
         {% endif %}
 
-        // Оцінка клієнта
         {% if agreement.clientscore %}
         doc.text("Client Score:", 10, yPosition); yPosition += 10;
         doc.text(`Score: {{ agreement.clientscore.score }}`, 15, yPosition); yPosition += 10;
@@ -184,18 +179,16 @@
         doc.text(`Date: {{ agreement.clientscore.score_date }}`, 15, yPosition); yPosition += 10;
         {% endif %}
 
-        // Деталі бронювання
         doc.setFontSize(14);
         doc.text("Booking Details", 10, yPosition); yPosition += 10;
 
         doc.setFontSize(12);
-        doc.text(`Car: {{ booking.car }} ({{ booking.car.price_per_day }} HRN per day)`, 10, yPosition); yPosition += 10;
+        doc.text(`Car: {{ booking.car }} ({{ booking.car.price_per_day }} USD per day)`, 10, yPosition); yPosition += 10;
         doc.text(`Start Date: {{ booking.start_date }}`, 10, yPosition); yPosition += 10;
         doc.text(`End Date: {{ booking.end_date }}`, 10, yPosition); yPosition += 10;
         doc.text(`Status: {{ booking.status }}`, 10, yPosition); yPosition += 10;
         doc.text(`Client: {{ booking.client.first_name }} {{ booking.client.last_name }}`, 10, yPosition); yPosition += 10;
 
-        // Додаткові послуги
         doc.setFontSize(14);
         doc.text("Additional Services", 10, yPosition); yPosition += 10;
 
@@ -209,7 +202,6 @@
         doc.text("No additional services.", 10, yPosition); yPosition += 10;
         {% endfor %}
 
-        // Завантаження PDF
         doc.save('rental_agreement.pdf');
     });
 </script>

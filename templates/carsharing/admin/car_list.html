@@ -47,14 +47,30 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'booking_list' %}">Bookings</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'branches_list' %}">Branches</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'additional_services' %}">Additional services</a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link" href="#" data-bs-toggle="dropdown" aria-expanded="false" role="button">
                         Statistics
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a>
-                        </li>
+                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a></li>
                         <li><a class="dropdown-item" href="{% url 'most_popular_cars' %}"> Most popular cars</a></li>
+                        <li><a class="dropdown-item" href="{% url 'additional_services_statistics' %}"> Additional services</a></li>
+                        <li><a class="dropdown-item" href="{% url 'insurance_usage_ratio' %}"> Insurance usage ratio</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" href="#" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        Account
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{% url 'user_info' %}"> Account info</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"> Logout</a></li>
                     </ul>
                 </li>
             </ul>
@@ -68,13 +84,13 @@
         <div class="row">
             <div class="col-md-3">
                 <input type="text" name="search" class="form-control"
-                       placeholder="Пошук (бренд, модель, номер)"
+                       placeholder="Search (brand, model, license plate)"
                        value="{{ search_query }}">
             </div>
 
             <div class="col-md-2">
                 <select name="car_type" class="form-control">
-                    <option value="">Усі типи авто</option>
+                    <option value="">All types</option>
                     {% for type in car_types %}
                         <option value="{{ type }}"
                                 {% if type == selected_car_type %}selected{% endif %}>
@@ -86,7 +102,7 @@
 
             <div class="col-md-2">
                 <select name="branch" class="form-control">
-                    <option value="">Усі філії</option>
+                    <option value="">All branches</option>
                     {% for branch in branches %}
                         <option value="{{ branch.branch_id }}"
                                 {% if branch.branch_id|stringformat:'s' == selected_branch %}selected{% endif %}>
@@ -98,19 +114,19 @@
 
             <div class="col-md-2">
                 <input type="number" name="release_year_min" class="form-control"
-                       placeholder="Рік випуску (від)"
+                       placeholder="Release year (from)"
                        value="{{ release_year_min }}">
             </div>
 
             <div class="col-md-2">
                 <input type="number" name="release_year_max" class="form-control"
-                       placeholder="Рік випуску (до)"
+                       placeholder="Release year (to)"
                        value="{{ release_year_max }}">
             </div>
 
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary">Пошук</button>
-                <a href="{% url 'car_list' %}" class="btn btn-secondary">Скинути</a>
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{% url 'car_list' %}" class="btn btn-secondary">Reset</a>
             </div>
         </div>
     </form>
@@ -128,7 +144,7 @@
             </th>
             <th>
                 <a href="?sort=branch__city&order={% if sort_by == 'branch__city' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Філія
+                    Branch
                     {% if sort_by == 'branch__city' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
@@ -136,7 +152,7 @@
             </th>
             <th>
                 <a href="?sort=car_type&order={% if sort_by == 'car_type' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Тип Авто
+                    Type
                     {% if sort_by == 'car_type' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
@@ -144,7 +160,7 @@
             </th>
             <th>
                 <a href="?sort=brand&order={% if sort_by == 'brand' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Бренд
+                    Brand
                     {% if sort_by == 'brand' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
@@ -152,7 +168,7 @@
             </th>
             <th>
                 <a href="?sort=model&order={% if sort_by == 'model' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Модель
+                    Model
                     {% if sort_by == 'model' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
@@ -160,7 +176,7 @@
             </th>
             <th>
                 <a href="?sort=license_plate&order={% if sort_by == 'license_plate' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Номерний знак
+                    License plate
                     {% if sort_by == 'license_plate' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
@@ -168,7 +184,7 @@
             </th>
             <th>
                 <a href="?sort=release_year&order={% if sort_by == 'release_year' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Рік випуску
+                    Year
                     {% if sort_by == 'release_year' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
@@ -176,13 +192,13 @@
             </th>
             <th>
                 <a href="?sort=price_per_day&order={% if sort_by == 'price_per_day' and order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Ціна за день
+                    Price per day
                     {% if sort_by == 'price_per_day' %}
                         {% if order == 'asc' %}▲{% else %}▼{% endif %}
                     {% endif %}
                 </a>
             </th>
-            <th>Дії</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -195,12 +211,12 @@
                 <td>{{ car.model }}</td>
                 <td>{{ car.license_plate }}</td>
                 <td>{{ car.release_year }}</td>
-                <td>{{ car.price_per_day }} грн</td>
+                <td>{{ car.price_per_day }} USD</td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
-                        <a href="{% url 'car_bookings' car.car_id %}" class="btn btn-info">Бронювання</a>
-                        <a href="{% url 'edit_car' car.car_id %}" class="btn btn-warning">Редагувати</a>
-                        <a href="{% url 'delete_car' car.car_id %}" class="btn btn-danger">Видалити</a>
+                        <a href="{% url 'car_bookings' car.car_id %}" class="btn btn-info">Bookings</a>
+                        <a href="{% url 'edit_car' car.car_id %}" class="btn btn-warning">Edit</a>
+                        <a href="{% url 'delete_car' car.car_id %}" class="btn btn-danger">Delete</a>
                     </div>
                 </td>
             </tr>
@@ -209,7 +225,7 @@
     </table>
 
 
-    <a href="{% url 'add_car' %}" class="btn btn-success">Додати новий автомобіль</a>
+    <a href="{% url 'add_car' %}" class="btn btn-success">Add new car</a>
 </div>
 </body>
 </html>

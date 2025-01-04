@@ -24,14 +24,30 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'booking_list' %}">Bookings</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'branches_list' %}">Branches</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'additional_services' %}">Additional services</a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link" href="#" data-bs-toggle="dropdown" aria-expanded="false" role="button">
                         Statistics
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a>
-                        </li>
+                        <li><a class="dropdown-item" href="{% url 'total_income' %}"> Total income for the period</a></li>
                         <li><a class="dropdown-item" href="{% url 'most_popular_cars' %}"> Most popular cars</a></li>
+                        <li><a class="dropdown-item" href="{% url 'additional_services_statistics' %}"> Additional services</a></li>
+                        <li><a class="dropdown-item" href="{% url 'insurance_usage_ratio' %}"> Insurance usage ratio</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" href="#" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        Account
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{% url 'user_info' %}"> Account info</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"> Logout</a></li>
                     </ul>
                 </li>
             </ul>

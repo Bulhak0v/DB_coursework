@@ -3,14 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <title>Edit User</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        button {
+            width: 200px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .cancel-link {
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
+        .cancel-link a {
+            text-decoration: none;
+            color: #dc3545;
+        }
+
+        .cancel-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h2>Edit User: {{ user }}</h2>
-    <form method="POST">
-        {% csrf_token %}
+
+<h2>Edit User: {{ user }}</h2>
+<form method="POST">
+    {% csrf_token %}
+    <div class="form-group">
         {{ form.as_p }}
-        <button type="submit">Save Changes</button>
+    </div>
+    <button type="submit">Save Changes</button>
+    <div class="cancel-link">
         <a href="{% url 'user_info' %}">Cancel</a>
-    </form>
+    </div>
+</form>
+
 </body>
 </html>
